@@ -1,0 +1,31 @@
+{
+  "name": "cosplay-review",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/svelte": "^9.0.1",
+    "@formkit/auto-animate": "^0.10.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.2.2",
+    "firebase": "^12.17.1",
+    "lucide-svelte": "^1.0.1",
+    "motion": "^13.1.0",
+    "svelte": "^5.56.9",
+    "svelte-sonner": "^1.1.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "playwright": "^1.62.1"
+  }
+}

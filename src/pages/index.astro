@@ -1,0 +1,77 @@
+---
+import ReviewForm from '../components/ReviewForm.svelte';
+import ReviewGallery from '../components/ReviewGallery.svelte';
+import { Toaster } from 'svelte-sonner';
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cosplay Rental Review ✨</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="min-h-screen bg-[#FFF5F7] text-slate-700 selection:bg-pink-300 selection:text-pink-900">
+    <Toaster position="top-center" richColors closeButton />
+    
+    <!-- Decorative Background Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-pink-200/30 blur-3xl"></div>
+      <div class="absolute top-[20%] -right-[10%] w-[30%] h-[30%] rounded-full bg-purple-200/30 blur-3xl"></div>
+      <div class="absolute -bottom-[10%] left-[20%] w-[50%] h-[40%] rounded-full bg-blue-100/30 blur-3xl"></div>
+    </div>
+
+    <main class="relative mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="mb-16 text-center">
+        <div class="clay-badge mb-6 inline-flex items-center justify-center p-4">
+          <span class="text-5xl drop-shadow-sm">🎀</span>
+        </div>
+        <h1 class="font-display text-4xl font-extrabold text-slate-800 tracking-tight sm:text-6xl mb-4">
+          Ulasan Kostum <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Cosplay</span>
+        </h1>
+        <p class="mx-auto max-w-xl text-lg text-slate-500 font-medium">
+          Terima kasih sudah menyewa! Ceritakan pengalamanmu supaya kami bisa terus berbenah ya~ ✨
+        </p>
+      </div>
+
+      <!-- Content Grid -->
+      <div class="grid gap-8 lg:grid-cols-12 items-start">
+        <!-- Left: Form (Claymorphism Card) -->
+        <section class="lg:col-span-5 clay-card p-8 sm:p-10 animate-float">
+          <div class="flex items-center gap-3 mb-8 border-b-2 border-pink-100/50 pb-4">
+            <div class="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-xl shadow-inner">✍️</div>
+            <h2 class="font-display text-2xl font-bold text-slate-700">Tulis Ulasanmu</h2>
+          </div>
+          <ReviewForm client:visible />
+        </section>
+
+        <!-- Right: Gallery (Bento Grid Style) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+          <div class="flex items-center justify-between px-2">
+             <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-xl shadow-inner">💖</div>
+              <h2 class="font-display text-2xl font-bold text-slate-700">Wall of Love</h2>
+            </div>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 bg-white/50 px-3 py-1 rounded-full border border-slate-100">Real-time</span>
+          </div>
+          
+          <ReviewGallery client:visible />
+        </section>
+      </div>
+
+      <!-- Footer -->
+      <footer class="mt-24 text-center">
+        <p class="text-sm font-semibold text-slate-400 flex items-center justify-center gap-2">
+          Dibuat dengan <span class="text-pink-400 animate-pulse">💗</span> untuk komunitas cosplay Indonesia
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
+
+</content>
