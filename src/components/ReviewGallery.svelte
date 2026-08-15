@@ -12,11 +12,24 @@
     comment?: string;
   };
 
-  let reviews = $state<Review[]>([]);
+  const PAGE_SIZE = 5;
+  const ROTATE_INTERVAL_MS = 1500;
+
+  let allReviews = $state<Review[]>([]);
+  let showAll = $state(false);
+  let pageOffset = $state(0);
+
+  let displayedReviews = $derived(
+    showAll ? allReviews : allReviews.slice(pageOffset, pageOffset + PAGE_SIZE)
+  );
+
+  let totalPages = $derived(Math.ceil(allReviews.length / PAGE_SIZE));
+  let hasMore = $derived(allReviews.length > PAGE_SIZE);
 
   onMount(() => {
     let disposed = false;
     let unsubscribe: (() => void) | undefined;
+    let rotateTimer: ReturnType<typeof setInterval> | undefined;
 
     const startRealtimeReviews = async () => {
       try {
@@ -31,12 +44,12 @@
           reviewsQuery,
           (snapshot) => {
             if (disposed) return;
-            reviews = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Review[];
+            allReviews = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Review[];
           },
           (error) => {
             console.error('Error loading reviews snapshot:', error);
             if (!disposed) {
-              reviews = [];
+              allReviews = [];
             }
           }
         );
@@ -46,11 +59,23 @@
     };
 
     void startRealtimeReviews();
+
+    rotateTimer = setInterval(() => {
+      if (showAll || allReviews.length <= PAGE_SIZE) return;
+      pageOffset = (pageOffset + PAGE_SIZE) % allReviews.length;
+    }, ROTATE_INTERVAL_MS);
+
     return () => {
       disposed = true;
       unsubscribe?.();
+      if (rotateTimer) clearInterval(rotateTimer);
     };
   });
+
+  function toggleShowAll() {
+    showAll = !showAll;
+    if (!showAll) pageOffset = 0;
+  }
 
   function safeRating(value?: number) {
     return Math.max(0, Math.min(5, Number(value) || 0));
@@ -85,7 +110,7 @@
   }
 </script>
 
-{#if reviews.length === 0}
+{#if allReviews.length === 0}
   <div class="empty-reviews">
     <div class="empty-icon"><img class="empty-avatar" src="/lilycosrent-avatar-square.webp" alt="Maskot chibi Lilycosrent" width="512" height="512" loading="lazy" decoding="async" /></div>
     <h3>Belum ada cerita di sini.</h3>
@@ -94,7 +119,7 @@
   </div>
 {:else}
   <div class="review-grid">
-    {#each reviews as review, index (review.id)}
+    {#each displayedReviews as review, index (review.id)}
       <article class="review-card" style={`--delay: ${index * 55}ms`}>
         <div class="review-card-top">
           <div class="review-person">
@@ -131,4 +156,48 @@
       </article>
     {/each}
   </div>
+
+  {#if hasMore}
+    <div class="wall-show-more">
+      <button class="wall-show-more-button" type="button" onclick={toggleShowAll}>
+        {showAll ? 'Tampilkan lebih sedikit' : `Lihat semua ulasan (${allReviews.length})`}
+        <span aria-hidden="true">{showAll ? '↑' : '↗'}</span>
+      </button>
+    </div>
+  {/if}
 {/if}
+
+<style>
+  .wall-show-more {
+    display: flex;
+    justify-content: center;
+    margin-top: 28px;
+  }
+
+  .wall-show-more-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border: 2px solid var(--pink-300, #f9c4d8);
+    border-radius: 16px;
+    background: #fff;
+    color: var(--plum, #4a1942);
+    font-family: var(--font-display, 'Baloo 2', cursive);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--pink-300, #f9c4d8), 0 8px 16px rgba(236, 95, 147, 0.12);
+    transition: transform 160ms var(--ease-out, ease-out), box-shadow 160ms var(--ease-out, ease-out), background 160ms var(--ease-out, ease-out);
+  }
+
+  .wall-show-more-button:hover {
+    transform: translateY(-2px);
+    background: var(--pink-50, #fff5f9);
+  }
+
+  .wall-show-more-button:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 0 var(--pink-300, #f9c4d8), 0 4px 8px rgba(236, 95, 147, 0.12);
+  }
+</style>
