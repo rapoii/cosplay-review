@@ -71,7 +71,7 @@
     <div class="rental-card-decoration rental-decoration-two" aria-hidden="true">♡</div>
     <div class="rental-card-brand">
       <span class="brand-avatar" aria-hidden="true"><img src="/lilycosrent-avatar-square.webp" alt="" width="512" height="512" loading="eager" decoding="async" /></span>
-      <span><strong>lilycosrent_</strong><small>review corner</small></span>
+      <span><strong>lilycosrent_</strong></span>
     </div>
     <div class="rental-card-main">
       <p class="rental-card-kicker">makasih sudah rental ♡</p>
