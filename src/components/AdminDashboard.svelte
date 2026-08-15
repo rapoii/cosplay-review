@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { demoReviews } from '../lib/demoReviews';
 
   type Review = {
     rating_quality?: number;
@@ -19,8 +18,7 @@
   let isUnlocked = $state(false);
   let isLoading = $state(false);
   let errorMessage = $state('');
-  let reviews = $state<Review[]>(demoReviews);
-  let usingDemoData = $state(true);
+  let reviews = $state<Review[]>([]);
   let lastUpdated = $state('');
 
   function safeRating(value?: number) {
@@ -43,21 +41,19 @@
     errorMessage = '';
 
     try {
-    const [{ db }, { collection, getDocs }] = await Promise.all([
-      import('../lib/firebase'),
-      import('firebase/firestore')
-    ]);
-    const snapshot = await getDocs(collection(db, 'reviews'));
-    const firestoreReviews = snapshot.docs
-      .map((doc) => doc.data() as Review & { status?: string })
-      .filter((review) => !review.status || review.status === 'approved');
-    usingDemoData = firestoreReviews.length === 0;
-    reviews = firestoreReviews.length ? firestoreReviews : demoReviews;
-    lastUpdated = new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date());
+      const [{ db }, { collection, getDocs }] = await Promise.all([
+        import('../lib/firebase'),
+        import('firebase/firestore')
+      ]);
+      const snapshot = await getDocs(collection(db, 'reviews'));
+      const firestoreReviews = snapshot.docs
+        .map((doc) => doc.data() as Review & { status?: string })
+        .filter((review) => !review.status || review.status === 'approved');
+      reviews = firestoreReviews;
+      lastUpdated = new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date());
     } catch (error) {
       console.error('Error loading admin stats:', error);
-      usingDemoData = true;
-      reviews = demoReviews;
+      reviews = [];
       lastUpdated = '';
       errorMessage = '';
     } finally {
@@ -112,9 +108,6 @@
     </div>
 
     {#if errorMessage}<p class="admin-error" role="alert">{errorMessage}</p>{/if}
-    {#if usingDemoData}
-      <div class="demo-data-note admin-demo-note" role="status"><span aria-hidden="true">✦</span> Data demo sementara — metrik akan mengikuti ulasan Firebase saat sudah tersedia.</div>
-    {/if}
 
     <div class="admin-total-card">
       <div>
@@ -142,7 +135,7 @@
     </div>
 
     <div class="admin-dashboard-footer">
-      <span>{usingDemoData ? 'Data demo lokal — menunggu ulasan Firebase' : lastUpdated ? `Terakhir diperbarui ${lastUpdated}` : 'Belum ada data terbaru'}</span>
+      <span>{lastUpdated ? `Terakhir diperbarui ${lastUpdated}` : 'Belum ada data terbaru'}</span>
       <a href="/">Kembali ke halaman review ↗</a>
     </div>
   </section>

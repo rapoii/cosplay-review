@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { demoReviews } from '../lib/demoReviews';
 
   type Review = {
     id: string;
@@ -13,8 +12,7 @@
     comment?: string;
   };
 
-  let reviews = $state<Review[]>(demoReviews);
-  let usingDemoData = $state(true);
+  let reviews = $state<Review[]>([]);
 
   onMount(() => {
     let disposed = false;
@@ -33,15 +31,12 @@
           reviewsQuery,
           (snapshot) => {
             if (disposed) return;
-            const firestoreReviews = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Review[];
-            usingDemoData = firestoreReviews.length === 0;
-            reviews = firestoreReviews.length ? firestoreReviews : demoReviews;
+            reviews = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Review[];
           },
           (error) => {
             console.error('Error loading reviews snapshot:', error);
             if (!disposed) {
-              usingDemoData = true;
-              reviews = demoReviews;
+              reviews = [];
             }
           }
         );
@@ -98,9 +93,6 @@
     <a href="#tulis-ulasan" class="empty-link">Tulis ulasan pertama <span class="inline-flair" aria-hidden="true">↗</span></a>
   </div>
 {:else}
-  {#if usingDemoData}
-    <div class="demo-data-note" role="status"><span aria-hidden="true">✦</span> Data demo sementara — akan tergantikan otomatis saat ulasan Firebase masuk.</div>
-  {/if}
   <div class="review-grid">
     {#each reviews as review, index (review.id)}
       <article class="review-card" style={`--delay: ${index * 55}ms`}>
@@ -134,7 +126,7 @@
         </div>
 
         {#if review.comment}
-          <blockquote>“{review.comment}”</blockquote>
+          <blockquote>"{review.comment}"</blockquote>
         {/if}
       </article>
     {/each}
