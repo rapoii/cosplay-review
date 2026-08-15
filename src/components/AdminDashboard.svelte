@@ -7,7 +7,7 @@
     rating_speed?: number;
   };
 
-  const ADMIN_KEY = 'lilyreview';
+  const ADMIN_KEY = '.gaktau123';
   const metrics = [
     { key: 'rating_quality', label: 'Kualitas kostum', icon: '✦', tone: 'pink' },
     { key: 'rating_service', label: 'Keramahan admin', icon: '♡', tone: 'lavender' },
@@ -21,16 +21,69 @@
   let reviews = $state<Review[]>([]);
   let lastUpdated = $state('');
 
+  // Cooldown state
+  let failCount = $state(0);
+  let cooldownUntil = $state(0);
+  let remainingSeconds = $state(0);
+  let cooldownTimer: ReturnType<typeof setInterval> | undefined;
+
+  function getCooldownDuration(fails: number): number {
+    if (fails <= 3) return 0;
+    // After 3 fails: 3s, then 9s, 15s, 21s... (3 + (fails-3)*6)
+    return 3 + (fails - 3) * 6;
+  }
+
+  function startCooldown() {
+    const duration = getCooldownDuration(failCount);
+    if (duration <= 0) return;
+
+    cooldownUntil = Date.now() + duration * 1000;
+    remainingSeconds = duration;
+
+    if (cooldownTimer) clearInterval(cooldownTimer);
+    cooldownTimer = setInterval(() => {
+      const left = Math.ceil((cooldownUntil - Date.now()) / 1000);
+      if (left <= 0) {
+        remainingSeconds = 0;
+        if (cooldownTimer) clearInterval(cooldownTimer);
+        cooldownTimer = undefined;
+      } else {
+        remainingSeconds = left;
+      }
+    }, 250);
+  }
+
   function safeRating(value?: number) {
     return Math.max(0, Math.min(5, Number(value) || 0));
   }
 
   function unlock() {
-    if (passcode.trim().toLowerCase() !== ADMIN_KEY) {
-      errorMessage = 'Kode belum cocok. Coba lagi ya.';
+    if (remainingSeconds > 0) {
+      errorMessage = `Tunggu ${remainingSeconds} detik sebelum mencoba lagi.`;
       return;
     }
 
+    if (passcode.trim() !== ADMIN_KEY) {
+      failCount++;
+      const duration = getCooldownDuration(failCount);
+      if (duration > 0) {
+        startCooldown();
+        errorMessage = `Kode salah. Tunggu ${duration} detik sebelum mencoba lagi.`;
+      } else {
+        errorMessage = 'Kode belum cocok. Coba lagi ya.';
+      }
+      passcode = '';
+      return;
+    }
+
+    // Success: reset everything
+    failCount = 0;
+    cooldownUntil = 0;
+    remainingSeconds = 0;
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer);
+      cooldownTimer = undefined;
+    }
     errorMessage = '';
     isUnlocked = true;
     loadStats();
@@ -77,6 +130,9 @@
       passcode = key;
       unlock();
     }
+    return () => {
+      if (cooldownTimer) clearInterval(cooldownTimer);
+    };
   });
 </script>
 
@@ -88,8 +144,14 @@
     <p>Masukkan kode sederhana untuk melihat ringkasan ulasan customer.</p>
     <form class="admin-key-form" onsubmit={(event) => { event.preventDefault(); unlock(); }}>
       <label for="admin-key">Kode admin</label>
-      <input id="admin-key" type="password" bind:value={passcode} placeholder="Masukkan kode" autocomplete="current-password" />
-      <button class="submit-button" type="submit">Buka dashboard <span aria-hidden="true">↗</span></button>
+      <input id="admin-key" type="password" bind:value={passcode} placeholder="Masukkan kode" autocomplete="current-password" disabled={remainingSeconds > 0} />
+      <button class="submit-button" type="submit" disabled={remainingSeconds > 0}>
+        {#if remainingSeconds > 0}
+          Tunggu {remainingSeconds}s...
+        {:else}
+          Buka dashboard <span aria-hidden="true">↗</span>
+        {/if}
+      </button>
     </form>
     {#if errorMessage}<p class="admin-error" role="alert">{errorMessage}</p>{/if}
     <p class="admin-disclaimer">Gate ini dibuat sebagai akses praktis untuk dashboard sederhana, bukan sistem keamanan untuk data sensitif.</p>
