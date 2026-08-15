@@ -196,7 +196,6 @@
 
     <div class="admin-dashboard-footer">
       <span>{lastUpdated ? `Terakhir diperbarui ${lastUpdated}` : 'Belum ada data terbaru'}</span>
-      <a href="/">Kembali ke halaman review ↗</a>
     </div>
   </section>
 {/if}
