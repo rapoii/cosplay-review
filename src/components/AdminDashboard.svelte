@@ -7,7 +7,7 @@
     rating_speed?: number;
   };
 
-  const ADMIN_KEY = '.gaktau123';
+  const ADMIN_KEY = import.meta.env.PUBLIC_ADMIN_KEY || '';
   const metrics = [
     { key: 'rating_quality', label: 'Kualitas kostum', icon: '✦', tone: 'pink' },
     { key: 'rating_service', label: 'Keramahan admin', icon: '♡', tone: 'lavender' },
@@ -29,7 +29,6 @@
 
   function getCooldownDuration(fails: number): number {
     if (fails <= 3) return 0;
-    // After 3 fails: 3s, then 9s, 15s, 21s... (3 + (fails-3)*6)
     return 3 + (fails - 3) * 6;
   }
 
@@ -76,7 +75,6 @@
       return;
     }
 
-    // Success: reset everything
     failCount = 0;
     cooldownUntil = 0;
     remainingSeconds = 0;
