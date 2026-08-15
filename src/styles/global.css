@@ -1589,8 +1589,8 @@ html.low-power .nav-menu-panel {
   animation: success-sparkle-pop 1300ms var(--ease-out) 3 alternate;
 }
 
-.success-sparkle-one { top: 4px; left: 7%; transform: rotate(-12deg); }
-.success-sparkle-two { top: 39px; right: 5%; color: var(--pink-500); background: #fff; animation-delay: 240ms; }
+.success-sparkle-one { top: 18px; left: 7%; transform: rotate(-12deg); }
+.success-sparkle-two { top: 52px; right: 5%; color: var(--pink-500); background: #fff; animation-delay: 240ms; }
 .success-sparkle-three { right: 13%; bottom: 19px; transform: rotate(13deg); animation-delay: 460ms; }
 
 .success-confetti {
@@ -1602,8 +1602,8 @@ html.low-power .nav-menu-panel {
   animation: success-confetti-fall 1500ms var(--ease-out) 3 alternate;
 }
 
-.success-confetti-one { top: 22px; left: 18%; transform: rotate(26deg); }
-.success-confetti-two { top: 82px; right: 18%; background: var(--lavender); transform: rotate(-23deg); animation-delay: 310ms; }
+.success-confetti-one { top: 36px; left: 18%; transform: rotate(26deg); }
+.success-confetti-two { top: 96px; right: 18%; background: var(--lavender); transform: rotate(-23deg); animation-delay: 310ms; }
 .success-confetti-three { bottom: 34px; left: 15%; background: var(--pink-300); transform: rotate(48deg); animation-delay: 620ms; }
 
 .success-badge {

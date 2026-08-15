@@ -53,12 +53,24 @@
     const reviewUrl = `${window.location.origin}/#tulis-ulasan`;
     const message = [
       `Aku baru aja kasih review di Lilycosrent! ⭐`,
-      `Pengalamanku: ${submittedReview.rating_quality}/5 untuk kostum, ${submittedReview.rating_service}/5 untuk admin, dan ${submittedReview.rating_speed}/5 untuk kecepatan chat.`,
-      `Kalau kamu juga pernah rental, boleh ikutan cerita di sini yaa: ${reviewUrl}`,
+      ``,
+      `Pengalamanku:`,
+      `${submittedReview.rating_quality}/5 untuk kostum`,
+      `${submittedReview.rating_service}/5 untuk admin`,
+      `${submittedReview.rating_speed}/5 untuk kecepatan chat`,
+      ``,
+      `Kalau kamu juga pernah rental, boleh ikutan cerita di sini yaa:`,
+      reviewUrl,
+      ``,
       `Follow juga @lilycosrent_ ♡`
     ].join('\n');
 
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+  }
+
+  function scrollToWall(e: MouseEvent) {
+    e.preventDefault();
+    document.getElementById('ulasan')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function writeAnotherReview() {
@@ -140,7 +152,7 @@
       <button class="whatsapp-button" type="button" onclick={shareToWhatsApp}>
         <span class="whatsapp-mark" aria-hidden="true">↗</span> Share ke WhatsApp
       </button>
-      <a class="success-secondary-button" href="#ulasan">Lihat Wall of Love <span aria-hidden="true">↗</span></a>
+      <a class="success-secondary-button" href="#ulasan" onclick={scrollToWall}>Lihat Wall of Love <span aria-hidden="true">↗</span></a>
       <button class="success-reset-button" type="button" onclick={writeAnotherReview}>Tulis ulasan lain</button>
     </div>
   </section>
