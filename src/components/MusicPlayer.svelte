@@ -10,8 +10,13 @@
     if (existing) return existing;
 
     const element = document.createElement('audio');
+    const opusPath = '/cupid-lite.opus';
+    const mp3FallbackPath = '/cupid-lite.mp3';
+    const opusSupport = element.canPlayType('audio/ogg; codecs="opus"');
+
     element.dataset.lilycosrentAudio = 'true';
-    element.src = '/cupid-lite.mp3';
+    element.dataset.audioFormat = opusSupport ? 'opus' : 'mp3';
+    element.src = opusSupport ? opusPath : mp3FallbackPath;
     element.autoplay = true;
     element.loop = true;
     element.preload = 'none';
@@ -19,6 +24,14 @@
     element.setAttribute('aria-label', 'Musik latar Cupid Lilycosrent');
     element.setAttribute('aria-hidden', 'true');
     element.className = 'lilycosrent-audio';
+    element.addEventListener('error', () => {
+      if (element.dataset.audioFormat !== 'opus' || element.dataset.audioFallback === 'true') return;
+      element.dataset.audioFallback = 'true';
+      element.dataset.audioFormat = 'mp3';
+      element.src = mp3FallbackPath;
+      element.load();
+      void element.play().catch(() => undefined);
+    });
     document.documentElement.appendChild(element);
     return element;
   }

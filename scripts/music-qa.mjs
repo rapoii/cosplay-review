@@ -8,9 +8,11 @@ await page.goto('http://127.0.0.1:4321/', { waitUntil: 'networkidle' });
 
 const initial = await page.evaluate(() => ({
   player: !document.querySelector('.music-player'),
-  audio: Boolean(document.querySelector('audio[src="/cupid-lite.mp3"]')),
-  audioSrc: document.querySelector('audio')?.getAttribute('src') ?? null,
-  autoplay: document.querySelector('audio')?.autoplay ?? null,
+    audio: Boolean(document.querySelector('audio[data-lilycosrent-audio]')),
+    audioSrc: document.querySelector('audio')?.getAttribute('src') ?? null,
+    audioFormat: document.querySelector('audio')?.dataset.audioFormat ?? null,
+    opusFallback: '/cupid-lite.mp3',
+    autoplay: document.querySelector('audio')?.autoplay ?? null,
   loop: document.querySelector('audio')?.loop ?? null,
   controlsVisible: Boolean(document.querySelector('audio[controls]')),
   paused: document.querySelector('audio')?.paused ?? null
