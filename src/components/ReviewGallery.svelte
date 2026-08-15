@@ -13,7 +13,7 @@
   };
 
   const PAGE_SIZE = 5;
-  const ROTATE_INTERVAL_MS = 1500;
+  const ROTATE_INTERVAL_MS = 5000;
 
   let allReviews = $state<Review[]>([]);
   let showAll = $state(false);
@@ -23,7 +23,6 @@
     showAll ? allReviews : allReviews.slice(pageOffset, pageOffset + PAGE_SIZE)
   );
 
-  let totalPages = $derived(Math.ceil(allReviews.length / PAGE_SIZE));
   let hasMore = $derived(allReviews.length > PAGE_SIZE);
 
   onMount(() => {
@@ -118,7 +117,7 @@
     <a href="#tulis-ulasan" class="empty-link">Tulis ulasan pertama <span class="inline-flair" aria-hidden="true">↗</span></a>
   </div>
 {:else}
-  <div class="review-grid">
+  <div class="review-grid review-rotate-fade" key={showAll ? 'all' : `page-${pageOffset}`}>
     {#each displayedReviews as review, index (review.id)}
       <article class="review-card" style={`--delay: ${index * 55}ms`}>
         <div class="review-card-top">
@@ -168,6 +167,22 @@
 {/if}
 
 <style>
+  .review-rotate-fade {
+    animation: reviewFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: opacity, transform;
+  }
+
+  @keyframes reviewFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
   .wall-show-more {
     display: flex;
     justify-content: center;
