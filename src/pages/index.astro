@@ -1,6 +1,9 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import ReviewForm from '../components/ReviewForm.svelte';
 import ReviewGallery from '../components/ReviewGallery.svelte';
+import MusicPlayer from '../components/MusicPlayer.svelte';
+import MotionEffects from '../components/MotionEffects.svelte';
 import { Toaster } from 'svelte-sonner';
 import '../styles/global.css';
 ---
@@ -10,68 +13,89 @@ import '../styles/global.css';
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cosplay Rental Review ✨</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet" />
+    <meta name="description" content="Review pengalaman rental kostum kamu di Lilycosrent dan bantu bestie cosplay lainnya." />
+    <meta name="theme-color" content="#fff0f6" />
+    <title>lilycosrent_ — review corner ♡</title>
+    <ClientRouter />
+    <link rel="preload" href="/fonts/wXKrE3kTposypRyd51jcAA.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/XRXV3I6Li01BKofINeaB.woff2" as="font" type="font/woff2" crossorigin />
   </head>
-  <body class="min-h-screen bg-[#FFF5F7] text-slate-700 selection:bg-pink-300 selection:text-pink-900">
+  <body>
     <Toaster position="top-center" richColors closeButton />
-    
-    <!-- Decorative Background Elements -->
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-pink-200/30 blur-3xl"></div>
-      <div class="absolute top-[20%] -right-[10%] w-[30%] h-[30%] rounded-full bg-purple-200/30 blur-3xl"></div>
-      <div class="absolute -bottom-[10%] left-[20%] w-[50%] h-[40%] rounded-full bg-blue-100/30 blur-3xl"></div>
-    </div>
 
-    <main class="relative mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-      <!-- Header -->
-      <div class="mb-16 text-center">
-        <div class="clay-badge mb-6 inline-flex items-center justify-center p-4">
-          <span class="text-5xl drop-shadow-sm">🎀</span>
+    <div class="review-page">
+      <header class="cute-nav" data-reveal="fade">
+        <a class="cute-brand" href="/" aria-label="lilycosrent review corner beranda">
+          <span class="brand-avatar" aria-hidden="true"><img src="/lilycosrent-avatar-square.webp" alt="" width="512" height="512" loading="eager" decoding="async" /></span>
+          <span class="brand-word"><strong>lilycosrent_</strong><small>review corner</small></span>
+        </a>
+        <div class="nav-links">
+          <details class="nav-menu">
+            <summary>Menu <span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="nav-menu-panel">
+              <a href="/" data-astro-prefetch="viewport"><span aria-hidden="true">✦</span> Halaman review</a>
+              <a href="/qr" data-astro-prefetch="viewport"><span aria-hidden="true">▣</span> QR &amp; kartu</a>
+              <a href="/admin" data-astro-prefetch="viewport"><span aria-hidden="true">♡</span> Dashboard admin</a>
+            </div>
+          </details>
         </div>
-        <h1 class="font-display text-4xl font-extrabold text-slate-800 tracking-tight sm:text-6xl mb-4">
-          Ulasan Kostum <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Cosplay</span>
-        </h1>
-        <p class="mx-auto max-w-xl text-lg text-slate-500 font-medium">
-          Terima kasih sudah menyewa! Ceritakan pengalamanmu supaya kami bisa terus berbenah ya~ ✨
-        </p>
-      </div>
+      </header>
 
-      <!-- Content Grid -->
-      <div class="grid gap-8 lg:grid-cols-12 items-start">
-        <!-- Left: Form (Claymorphism Card) -->
-        <section class="lg:col-span-5 clay-card p-8 sm:p-10 animate-float">
-          <div class="flex items-center gap-3 mb-8 border-b-2 border-pink-100/50 pb-4">
-            <div class="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-xl shadow-inner">✍️</div>
-            <h2 class="font-display text-2xl font-bold text-slate-700">Tulis Ulasanmu</h2>
-          </div>
-          <ReviewForm client:visible />
+      <main class="page-content">
+        <section class="form-first-layout" id="tulis-ulasan" aria-labelledby="form-title">
+          <section class="form-shell" aria-label="Form ulasan rental kostum" data-reveal="up">
+            <div class="form-shell-header">
+              <div>
+                <p class="mini-label"><span aria-hidden="true">✦</span> LILY'S REVIEW CORNER</p>
+                <h1 id="form-title">Gimana kostumnya, bestie?</h1>
+                <p class="form-intro">Makasih sudah rental di Lilycosrent. Isi sebentar yaa, cerita kamu berarti banget ♡</p>
+              </div>
+              <span class="mini-sticker" aria-hidden="true">✎</span>
+            </div>
+            <ReviewForm client:load />
+          </section>
+
+          <aside class="chibi-greeting" aria-label="Sambutan dari maskot Cosplay Review" data-reveal="up" data-delay="2">
+            <div class="chibi-sparkle sparkle-one" aria-hidden="true">✦</div>
+            <div class="chibi-sparkle sparkle-two" aria-hidden="true">♡</div>
+            <div class="greeting-copy">
+              <p class="greeting-chip">haii, bestie Lilycosrent! <span aria-hidden="true">♡</span></p>
+              <h2>cerita kamu<br /><em>berarti</em> banget.</h2>
+              <p>Review jujur dari kamu bantu bestie cosplay lainnya rental dengan lebih tenang.</p>
+              <div class="cute-tags" aria-label="Area layanan Lilycosrent">
+                <span>Serang</span><span>Tangerang</span><span>Jabodetabek</span>
+              </div>
+            </div>
+            <figure class="chibi-art">
+              <div class="speech-bubble">makasih sudah rental~ <span aria-hidden="true">♡</span></div>
+              <img src="/chibi-review-card.webp" alt="Maskot chibi Lilycosrent sedang menyapa sambil membawa kostum pink" width="1200" height="1600" loading="eager" decoding="async" />
+            </figure>
+          </aside>
         </section>
 
-        <!-- Right: Gallery (Bento Grid Style) -->
-        <section class="lg:col-span-7 flex flex-col gap-6">
-          <div class="flex items-center justify-between px-2">
-             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-xl shadow-inner">💖</div>
-              <h2 class="font-display text-2xl font-bold text-slate-700">Wall of Love</h2>
+        <p class="review-scroll-hint" data-reveal="fade"><span class="scroll-badge" aria-hidden="true">↓</span> Sudah isi? Sekalian intip cerita customer lain di bawah, yuk.</p>
+
+        <section class="wall-section" id="ulasan" aria-labelledby="wall-title" data-reveal="up">
+          <div class="wall-header">
+            <div>
+              <p class="section-kicker"><span aria-hidden="true">♡</span> CERITA DARI BESTIE RENTAL</p>
+              <h2 id="wall-title">Lily's Wall of <em>Love</em></h2>
+              <p>Pengalaman real dari bestie yang sudah rental di Lilycosrent.</p>
             </div>
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 bg-white/50 px-3 py-1 rounded-full border border-slate-100">Real-time</span>
+            <div class="wall-meta"><span class="live-indicator"><span class="status-dot" aria-hidden="true"></span> Ulasan terbaru</span></div>
           </div>
-          
           <ReviewGallery client:visible />
         </section>
-      </div>
+      </main>
 
-      <!-- Footer -->
-      <footer class="mt-24 text-center">
-        <p class="text-sm font-semibold text-slate-400 flex items-center justify-center gap-2">
-          Dibuat dengan <span class="text-pink-400 animate-pulse">💗</span> untuk komunitas cosplay Indonesia
-        </p>
+      <footer class="site-footer" data-reveal="fade">
+        <span aria-hidden="true">♡</span>
+        <p>made with love by lilycosrent_ ♡</p>
+        <span aria-hidden="true">♡</span>
       </footer>
-    </main>
+
+      <MotionEffects client:load transition:persist="motion-runtime" />
+      <MusicPlayer client:load transition:persist="site-audio" />
+    </div>
   </body>
 </html>
-
-</content>

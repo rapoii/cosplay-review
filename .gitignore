@@ -20,5 +20,14 @@ pnpm-debug.log*
 # macOS-specific files
 .DS_Store
 
+# local QA artifacts
+qa-*.json
+qa-*.png
+qa_*.json
+spacing-*.json
+*-mobile-spacing-*.png
+*-visual-qa*.png
+/tmp/
+
 # jetbrains setting folder
 .idea/

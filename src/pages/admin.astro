@@ -1,0 +1,47 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import AdminDashboard from '../components/AdminDashboard.svelte';
+import MotionEffects from '../components/MotionEffects.svelte';
+import MusicPlayer from '../components/MusicPlayer.svelte';
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#fff0f6" />
+    <title>Lilycosrent — review stats</title>
+    <ClientRouter />
+    <link rel="preload" href="/fonts/wXKrE3kTposypRyd51jcAA.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/XRXV3I6Li01BKofINeaB.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body>
+    <div class="review-page internal-page">
+      <header class="cute-nav">
+        <a class="cute-brand" href="/" aria-label="Kembali ke halaman review Lilycosrent">
+          <span class="brand-avatar" aria-hidden="true"><img src="/lilycosrent-avatar-square.webp" alt="" width="512" height="512" loading="eager" decoding="async" /></span>
+          <span class="brand-word"><strong>lilycosrent_</strong><small>owner corner</small></span>
+        </a>
+        <div class="nav-links">
+          <details class="nav-menu">
+            <summary>Menu <span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="nav-menu-panel">
+              <a href="/" data-astro-prefetch="viewport"><span aria-hidden="true">✦</span> Halaman review</a>
+              <a href="/qr" data-astro-prefetch="viewport"><span aria-hidden="true">▣</span> QR &amp; kartu</a>
+              <a href="/admin" data-astro-prefetch="viewport"><span aria-hidden="true">♡</span> Dashboard admin</a>
+            </div>
+          </details>
+        </div>
+      </header>
+      <main class="internal-content">
+        <AdminDashboard client:load />
+      </main>
+      <footer class="site-footer"><span aria-hidden="true">♡</span><p>private stats by lilycosrent_</p><span aria-hidden="true">♡</span></footer>
+      <MotionEffects client:load transition:persist="motion-runtime" />
+      <MusicPlayer client:load transition:persist="site-audio" />
+    </div>
+  </body>
+</html>

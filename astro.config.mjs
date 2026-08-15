@@ -8,7 +8,16 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   integrations: [svelte()],
 
+  // Warm internal routes while their nav links are visible so ClientRouter can start immediately.
+  prefetch: {
+    defaultStrategy: 'viewport',
+    prefetchAll: false
+  },
+
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    server: {
+      allowedHosts: true
+    }
   }
 });

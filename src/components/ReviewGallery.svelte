@@ -1,111 +1,142 @@
 <script lang="ts">
-  import { db } from '../lib/firebase';
-  import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
   import { onMount } from 'svelte';
+  import { demoReviews } from '../lib/demoReviews';
 
-  let reviews = $state<any[]>([]);
+  type Review = {
+    id: string;
+    instagram_username?: string;
+    reviewer_name?: string;
+    costume_type?: string;
+    rating_quality?: number;
+    rating_service?: number;
+    rating_speed?: number;
+    comment?: string;
+  };
+
+  let reviews = $state<Review[]>(demoReviews);
+  let usingDemoData = $state(true);
 
   onMount(() => {
-    const q = query(collection(db, 'reviews'), orderBy('created_at', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    });
-    return () => unsubscribe();
+    let disposed = false;
+    let unsubscribe: (() => void) | undefined;
+
+    const startRealtimeReviews = async () => {
+      try {
+        const [{ db }, { collection, query, orderBy, onSnapshot }] = await Promise.all([
+          import('../lib/firebase'),
+          import('firebase/firestore')
+        ]);
+        if (disposed) return;
+
+        const reviewsQuery = query(collection(db, 'reviews'), orderBy('created_at', 'desc'));
+        unsubscribe = onSnapshot(
+          reviewsQuery,
+          (snapshot) => {
+            if (disposed) return;
+            const firestoreReviews = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Review[];
+            usingDemoData = firestoreReviews.length === 0;
+            reviews = firestoreReviews.length ? firestoreReviews : demoReviews;
+          },
+          (error) => {
+            console.error('Error loading reviews snapshot:', error);
+            if (!disposed) {
+              usingDemoData = true;
+              reviews = demoReviews;
+            }
+          }
+        );
+      } catch (error) {
+        console.error('Error loading reviews:', error);
+      }
+    };
+
+    void startRealtimeReviews();
+    return () => {
+      disposed = true;
+      unsubscribe?.();
+    };
   });
 
-  function getStars(rating: number) {
-    return Array(5).fill(0).map((_, i) => i < rating ? '★' : '☆');
+  function safeRating(value?: number) {
+    return Math.max(0, Math.min(5, Number(value) || 0));
+  }
+
+  function averageRating(review: Review) {
+    const total = safeRating(review.rating_quality) + safeRating(review.rating_service) + safeRating(review.rating_speed);
+    return (total / 3).toFixed(1);
+  }
+
+  function getStars(value?: number) {
+    const rating = safeRating(value);
+    return Array.from({ length: 5 }, (_, index) => (index < rating ? '★' : '☆')).join('');
+  }
+
+  function getReviewerHandle(review: Review) {
+    return review.instagram_username || review.reviewer_name || 'Anonim';
+  }
+
+  function getInitials(name?: string) {
+    const words = (name || 'Anonim').trim().replace(/^@/, '').split(/\s+/).filter(Boolean);
+    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+    return words.slice(0, 2).map((word) => word[0]).join('').toUpperCase();
+  }
+
+  function getMetrics(review: Review) {
+    return [
+      { label: 'Kualitas', value: review.rating_quality },
+      { label: 'Admin', value: review.rating_service },
+      { label: 'Kecepatan', value: review.rating_speed }
+    ];
   }
 </script>
 
-<div class="mt-12">
-  <div class="flex items-center justify-center gap-3 mb-8">
-    <span class="text-3xl animate-sparkle">💖</span>
-    <h2 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
-      Wall of Love
-    </h2>
-    <span class="text-3xl animate-sparkle" style="animation-delay: 0.5s">💖</span>
+{#if reviews.length === 0}
+  <div class="empty-reviews">
+    <div class="empty-icon"><img class="empty-avatar" src="/lilycosrent-avatar-square.webp" alt="Maskot chibi Lilycosrent" width="512" height="512" loading="lazy" decoding="async" /></div>
+    <h3>Belum ada cerita di sini.</h3>
+    <p>Jadilah yang pertama berbagi pengalaman sewamu dengan komunitas.</p>
+    <a href="#tulis-ulasan" class="empty-link">Tulis ulasan pertama <span class="inline-flair" aria-hidden="true">↗</span></a>
   </div>
-
-  {#if reviews.length === 0}
-    <div class="clay-card p-12 text-center animate-float-in">
-      <p class="text-6xl mb-4 animate-bounce-slow">🌸</p>
-      <p class="text-xl font-semibold text-pink-400">Belum ada ulasan nih~</p>
-      <p class="text-sm text-slate-400 mt-2">Jadi yang pertama review yuk! ✨</p>
-    </div>
-  {:else}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {#each reviews as review, index (review.id)}
-        <div 
-          class="clay-card p-6 hover:scale-[1.02] transition-transform duration-300 animate-float-in"
-          style="animation-delay: {index * 0.1}s"
-        >
-          <!-- Header -->
-          <div class="flex items-start justify-between mb-4">
+{:else}
+  {#if usingDemoData}
+    <div class="demo-data-note" role="status"><span aria-hidden="true">✦</span> Data demo sementara — akan tergantikan otomatis saat ulasan Firebase masuk.</div>
+  {/if}
+  <div class="review-grid">
+    {#each reviews as review, index (review.id)}
+      <article class="review-card" style={`--delay: ${index * 55}ms`}>
+        <div class="review-card-top">
+          <div class="review-person">
+            <div class="review-avatar" aria-hidden="true">{getInitials(getReviewerHandle(review))}</div>
             <div>
-              <h3 class="font-bold text-slate-700 text-lg">{review.reviewer_name}</h3>
+              <h3>{getReviewerHandle(review)}</h3>
               {#if review.costume_type}
-                <span class="inline-block mt-1 text-xs font-semibold text-pink-500 bg-pink-100 px-3 py-1 rounded-full border border-pink-200">
-                  🎭 {review.costume_type}
-                </span>
+                <p>{review.costume_type}</p>
+              {:else}
+                <p>Penyewa kostum</p>
               {/if}
             </div>
-            <span class="text-2xl animate-sparkle">✨</span>
           </div>
-
-          <!-- Ratings -->
-          <div class="space-y-2 mb-4 bg-pink-50/50 p-4 rounded-2xl border border-pink-100">
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-slate-500 font-medium">Kualitas</span>
-              <span class="text-yellow-400 tracking-wider text-base">{getStars(review.rating_quality).join('')}</span>
-            </div>
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-slate-500 font-medium">Admin</span>
-              <span class="text-yellow-400 tracking-wider text-base">{getStars(review.rating_service).join('')}</span>
-            </div>
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-slate-500 font-medium">Kecepatan</span>
-              <span class="text-yellow-400 tracking-wider text-base">{getStars(review.rating_speed).join('')}</span>
-            </div>
+          <div class="review-score" aria-label={`Skor rata-rata ${averageRating(review)} dari 5`}>
+            <strong>{averageRating(review)}</strong>
+            <span>/ 5</span>
           </div>
-
-          <!-- Comment -->
-          {#if review.comment}
-            <p class="text-slate-600 text-sm italic leading-relaxed border-l-4 border-pink-300 pl-4 py-1">
-              "{review.comment}"
-            </p>
-          {/if}
         </div>
-      {/each}
-    </div>
-  {/if}
-</div>
 
-<style>
-  @keyframes float-in {
-    from { opacity: 0; transform: translateY(20px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
+        <div class="review-stars" aria-label={`${averageRating(review)} dari 5 bintang`}>{getStars(Number(averageRating(review)))} <span>{averageRating(review)}</span></div>
 
-  @keyframes sparkle {
-    0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
-    50% { transform: scale(1.2) rotate(15deg); opacity: 0.8; }
-  }
+        <div class="review-metrics">
+          {#each getMetrics(review) as metric}
+            <div class="metric-item">
+              <span>{metric.label}</span>
+              <strong>{safeRating(metric.value)}<small>/5</small></strong>
+            </div>
+          {/each}
+        </div>
 
-  @keyframes bounce-slow {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
-
-  .animate-float-in {
-    animation: float-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  }
-
-  .animate-sparkle {
-    animation: sparkle 2.5s ease-in-out infinite;
-  }
-
-  .animate-bounce-slow {
-    animation: bounce-slow 2s ease-in-out infinite;
-  }
-</style>
+        {#if review.comment}
+          <blockquote>“{review.comment}”</blockquote>
+        {/if}
+      </article>
+    {/each}
+  </div>
+{/if}

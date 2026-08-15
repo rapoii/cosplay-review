@@ -1,180 +1,205 @@
 <script lang="ts">
-  import { db } from '../lib/firebase';
-  import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
   import { toast } from 'svelte-sonner';
-  
-  let formData = $state({
-    reviewer_name: '',
+
+  type RatingKey = 'rating_quality' | 'rating_service' | 'rating_speed';
+  type FormData = {
+    instagram_username: string;
+    costume_type: string;
+    rating_quality: number;
+    rating_service: number;
+    rating_speed: number;
+    comment: string;
+  };
+  type SubmittedReview = FormData;
+
+  const emptyForm = (): FormData => ({
+    instagram_username: '',
     costume_type: '',
     rating_quality: 0,
     rating_service: 0,
     rating_speed: 0,
     comment: ''
   });
-  
+
+  const ratingDescriptions: Record<number, string> = {
+    1: 'Kurang puas',
+    2: 'Lumayan',
+    3: 'Cukup oke',
+    4: 'Bagus banget',
+    5: 'Puas banget!'
+  };
+
+  let formData = $state<FormData>(emptyForm());
+  let submittedReview = $state<SubmittedReview | null>(null);
   let isSubmitting = $state(false);
 
   const categories = [
-    { key: 'rating_quality', label: 'Kualitas Baju', icon: '🎭' },
-    { key: 'rating_service', label: 'Keramahan Admin', icon: '💖' },
-    { key: 'rating_speed', label: 'Kecepatan Chat', icon: '⚡' }
-  ];
+    { key: 'rating_quality', label: 'Kualitas kostum', helper: 'Bahan, ukuran, dan detail', icon: '✦' },
+    { key: 'rating_service', label: 'Keramahan admin', helper: 'Respons dan komunikasinya', icon: '♡' },
+    { key: 'rating_speed', label: 'Kecepatan chat', helper: 'Seberapa cepat dibalas', icon: 'ϟ' }
+  ] as const;
 
-  async function handleSubmit(e: Event) {
-    e.preventDefault();
-    if (!formData.reviewer_name || !formData.rating_quality || !formData.rating_service || !formData.rating_speed) {
-      toast.error('Mohon isi nama dan semua rating ya~ ✨');
+  function setRating(key: RatingKey, value: number) {
+    formData[key] = value;
+  }
+
+  function getRatingLabel(value: number) {
+    return value ? `${value}/5 · ${ratingDescriptions[value]}` : 'Belum diisi';
+  }
+
+  function shareToWhatsApp() {
+    if (!submittedReview || typeof window === 'undefined') return;
+
+    const reviewUrl = `${window.location.origin}/#tulis-ulasan`;
+    const message = [
+      `Aku baru aja kasih review di Lilycosrent! ⭐`,
+      `Pengalamanku: ${submittedReview.rating_quality}/5 untuk kostum, ${submittedReview.rating_service}/5 untuk admin, dan ${submittedReview.rating_speed}/5 untuk kecepatan chat.`,
+      `Kalau kamu juga pernah rental, boleh ikutan cerita di sini yaa: ${reviewUrl}`,
+      `Follow juga @lilycosrent_ ♡`
+    ].join('\n');
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+  }
+
+  function writeAnotherReview() {
+    submittedReview = null;
+    formData = emptyForm();
+  }
+
+  async function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+
+    if (!formData.instagram_username.trim() || !formData.rating_quality || !formData.rating_service || !formData.rating_speed) {
+      toast.error('Isi username Instagram dan tiga rating dulu ya.');
       return;
     }
-    
+
     isSubmitting = true;
+    const cleanReview: FormData = {
+      instagram_username: formData.instagram_username.trim(),
+      costume_type: formData.costume_type.trim(),
+      rating_quality: formData.rating_quality,
+      rating_service: formData.rating_service,
+      rating_speed: formData.rating_speed,
+      comment: formData.comment.trim()
+    };
+
     try {
+      const [{ db }, { collection, addDoc, serverTimestamp }] = await Promise.all([
+        import('../lib/firebase'),
+        import('firebase/firestore')
+      ]);
+
       await addDoc(collection(db, 'reviews'), {
-        ...formData,
+        ...cleanReview,
         status: 'approved',
         created_at: serverTimestamp(),
         ip_hash: null
       });
-      
-      toast.success('Ulasan berhasil dikirim! Arigatou~ 🌸');
-      
-      formData = {
-        reviewer_name: '',
-        costume_type: '',
-        rating_quality: 0,
-        rating_service: 0,
-        rating_speed: 0,
-        comment: ''
-      };
+
+      submittedReview = cleanReview;
+      formData = emptyForm();
+      toast.success('Ulasanmu sudah masuk ke Wall of Love!');
     } catch (error) {
       console.error('Error submitting review:', error);
-      toast.error('Gagal mengirim ulasan. Coba lagi ya~ 😢');
+      toast.error('Ulasan belum terkirim. Coba lagi sebentar ya.');
     } finally {
       isSubmitting = false;
     }
   }
 </script>
 
-<div class="clay-card p-6 md:p-8 animate-fade-in-up">
-  <h2 class="text-2xl font-bold text-pink-600 mb-6 flex items-center gap-2">
-    <span class="text-3xl">✍️</span> Tulis Ulasanmu
-  </h2>
-  
-  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-6">
-    <!-- Name & Costume Type -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="space-y-2">
-        <label for="name" class="text-sm font-bold text-gray-600 ml-1">Nama Kamu</label>
-        <input 
-          id="name"
-          type="text" 
-          bind:value={formData.reviewer_name}
-          placeholder="Contoh: Miku Chan"
-          class="clay-input w-full px-4 py-3 rounded-2xl outline-none transition-all placeholder:text-gray-400"
-        />
-      </div>
-      <div class="space-y-2">
-        <label for="costume" class="text-sm font-bold text-gray-600 ml-1">Kostum yang Disewa (Opsional)</label>
-        <input 
-          id="costume"
-          type="text" 
-          bind:value={formData.costume_type}
-          placeholder="Contoh: Hatsune Miku V4X"
-          class="clay-input w-full px-4 py-3 rounded-2xl outline-none transition-all placeholder:text-gray-400"
-        />
-      </div>
+{#if submittedReview}
+  <section class="review-success" aria-live="polite">
+    <div class="success-sparkles" aria-hidden="true">
+      <span class="success-sparkle success-sparkle-one">✦</span>
+      <span class="success-sparkle success-sparkle-two">♡</span>
+      <span class="success-sparkle success-sparkle-three">✦</span>
+      <span class="success-confetti success-confetti-one"></span>
+      <span class="success-confetti success-confetti-two"></span>
+      <span class="success-confetti success-confetti-three"></span>
     </div>
+    <div class="success-badge" aria-hidden="true">♡</div>
+    <p class="mini-label"><span aria-hidden="true">✦</span> REVIEW RECEIVED</p>
+    <h2>Makasih, {submittedReview.instagram_username}!</h2>
+    <p class="success-copy">Cerita kamu sudah masuk ke <em>Wall of Love</em>. Makasih sudah bantu bestie cosplay lainnya rental dengan lebih tenang ♡</p>
 
-    <!-- Ratings -->
-    <div class="clay-rating-container p-5 rounded-3xl space-y-4">
-      {#each categories as cat}
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <span class="font-bold text-gray-700 flex items-center gap-2">
-            <span class="text-xl">{cat.icon}</span> {cat.label}
+    <div class="success-summary" aria-label="Ringkasan rating yang baru dikirim">
+      {#each categories as category}
+        <div class="success-rating-item">
+          <span class:lightning-icon={category.key === 'rating_speed'} class="rating-icon" aria-hidden="true">{category.icon}</span>
+          <span>
+            <strong>{submittedReview[category.key]}/5</strong>
+            <small>{ratingDescriptions[submittedReview[category.key]]}</small>
           </span>
-          <div class="flex gap-1 bg-white/50 p-1 rounded-2xl">
-            {#each [1, 2, 3, 4, 5] as star}
-              <button
-                type="button"
-                class="text-2xl transition-all duration-200 hover:scale-125 focus:outline-none cursor-pointer active:scale-95"
-                class:text-yellow-400={star <= formData[cat.key]}
-                class:text-gray-300={star > formData[cat.key]}
-                onclick={() => formData[cat.key] = star}
-                aria-label={`Rate ${star} stars`}
-              >
-                ★
-              </button>
-            {/each}
-          </div>
         </div>
       {/each}
     </div>
 
-    <!-- Comment -->
-    <div class="space-y-2">
-      <label for="comment" class="text-sm font-bold text-gray-600 ml-1">Ceritakan Pengalamanmu~ 💬</label>
-      <textarea 
-        id="comment"
-        bind:value={formData.comment}
-        rows="4"
-        placeholder="Bajunya bagus banget, adminnya ramah, bales chatnya cepet! Recommended pokoknya~ ✨"
-        class="clay-input w-full px-4 py-3 rounded-2xl outline-none transition-all resize-none placeholder:text-gray-400"
-      ></textarea>
+    <div class="success-actions">
+      <button class="whatsapp-button" type="button" onclick={shareToWhatsApp}>
+        <span class="whatsapp-mark" aria-hidden="true">↗</span> Share ke WhatsApp
+      </button>
+      <a class="success-secondary-button" href="#ulasan">Lihat Wall of Love <span aria-hidden="true">↗</span></a>
+      <button class="success-reset-button" type="button" onclick={writeAnotherReview}>Tulis ulasan lain</button>
+    </div>
+  </section>
+{:else}
+  <form class="review-form" onsubmit={handleSubmit}>
+    <div class="form-grid">
+      <div class="field-group">
+        <label for="instagram-username">Username Instagram <span>*</span></label>
+        <input id="instagram-username" type="text" bind:value={formData.instagram_username} placeholder="Contoh: @miku_chan" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+      </div>
+      <div class="field-group">
+        <label for="costume">Kostum yang disewa <small>opsional</small></label>
+        <input id="costume" type="text" bind:value={formData.costume_type} placeholder="Contoh: Hatsune Miku V4X" />
+      </div>
     </div>
 
-    <!-- Submit Button -->
-    <button
-      disabled={isSubmitting}
-      class="w-full py-4 bg-gradient-to-r from-pink-400 to-purple-400 text-white font-bold rounded-2xl shadow-[0_4px_0_rgb(219,39,119)] hover:shadow-[0_6px_0_rgb(219,39,119)] hover:-translate-y-0.5 active:shadow-none active:translate-y-1 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
-    >
-      {#if isSubmitting}
-        <span class="animate-spin">🌸</span> Mengirim...
-      {:else}
-        <span>Kirim Ulasan ✨</span>
-      {/if}
-    </button>
-  </form>
-</div>
+    <fieldset class="rating-fieldset">
+      <legend>Bagaimana pengalamanmu? <span class="legend-note">Pilih 1–5 bintang</span></legend>
+      <div class="rating-list">
+        {#each categories as category}
+          <div class="rating-row">
+            <div class="rating-label">
+              <span class:lightning-icon={category.key === 'rating_speed'} class="rating-icon" aria-hidden="true">{category.icon}</span>
+              <span><strong>{category.label}</strong><small>{category.helper}</small></span>
+            </div>
+            <div class="rating-control" role="radiogroup" aria-label={category.label}>
+              {#each [1, 2, 3, 4, 5] as star}
+                <button
+                  type="button"
+                  class:active={star <= formData[category.key]}
+                  class="star-button"
+                  role="radio"
+                  aria-checked={star === formData[category.key]}
+                  aria-label={`${star} bintang untuk ${category.label} — ${ratingDescriptions[star]}`}
+                  onclick={() => setRating(category.key, star)}
+                >★</button>
+              {/each}
+              <span class:filled={Boolean(formData[category.key])} class="rating-value">{getRatingLabel(formData[category.key])}</span>
+            </div>
+          </div>
+        {/each}
+      </div>
+    </fieldset>
 
-<style>
-  @keyframes fade-in-up {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .animate-fade-in-up {
-    animation: fade-in-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  }
-  
-  /* Claymorphism Styles */
-  .clay-card {
-    background: rgba(255, 255, 255, 0.85);
-    border-radius: 24px;
-    border: 3px solid rgba(255, 182, 193, 0.3);
-    box-shadow: 
-      inset -2px -2px 8px rgba(255, 255, 255, 0.8),
-      inset 2px 2px 8px rgba(236, 72, 153, 0.05),
-      8px 8px 16px rgba(236, 72, 153, 0.1),
-      -4px -4px 12px rgba(255, 255, 255, 0.9);
-  }
-  
-  .clay-input {
-    background: rgba(255, 255, 255, 0.6);
-    border: 2px solid rgba(255, 182, 193, 0.2);
-    box-shadow: 
-      inset 2px 2px 6px rgba(236, 72, 153, 0.05),
-      inset -1px -1px 4px rgba(255, 255, 255, 0.8);
-  }
-  .clay-input:focus {
-    background: white;
-    border-color: #f472b6;
-    box-shadow: 
-      inset 2px 2px 6px rgba(236, 72, 153, 0.08),
-      0 0 0 3px rgba(244, 114, 182, 0.2);
-  }
-  
-  .clay-rating-container {
-    background: linear-gradient(135deg, rgba(252, 231, 243, 0.5) 0%, rgba(243, 232, 255, 0.5) 100%);
-    border: 2px solid rgba(255, 182, 193, 0.2);
-    box-shadow: inset 2px 2px 8px rgba(255, 255, 255, 0.6);
-  }
-</style>
+    <div class="field-group">
+      <label for="comment">Ceritakan sedikit <small>opsional</small></label>
+      <textarea id="comment" bind:value={formData.comment} rows="4" maxlength="500" placeholder="Apa yang paling kamu suka dari pengalaman sewamu?"></textarea>
+      <div class="field-hint"><span>Jujur, santai, dan tetap ramah.</span><span>{formData.comment.length} / 500</span></div>
+    </div>
+
+    <div class="form-submit-row">
+      <p><span class="form-note-flair" aria-hidden="true">♡</span> Ulasanmu akan langsung tampil di wall.</p>
+      <button class="submit-button" type="submit" disabled={isSubmitting}>
+        {#if isSubmitting}
+          <span class="submit-spinner" aria-hidden="true"></span> Mengirim...
+        {:else}
+          Kirim ulasan <span class="submit-flair" aria-hidden="true">✦</span>
+        {/if}
+      </button>
+    </div>
+  </form>
+{/if}
