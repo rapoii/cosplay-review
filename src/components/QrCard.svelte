@@ -60,7 +60,7 @@
       <button class="qr-outline-button" type="button" onclick={downloadQr} disabled={!qrReady}>Download QR PNG</button>
       <button class="qr-outline-button" type="button" onclick={shareTemplate} disabled={!reviewUrl}>Share template WhatsApp ↗</button>
     </div>
-    <p class="qr-url" aria-live="polite">Link tujuan: <strong>{reviewUrl || 'Menyiapkan link...'}</strong></p>
+
     {#if qrError}
       <p class="qr-error" role="status">QR belum siap. Coba refresh halaman ini yaa.</p>
     {/if}
