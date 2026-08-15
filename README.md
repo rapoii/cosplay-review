@@ -1,43 +1,75 @@
-# Astro Starter Kit: Minimal
+# 🎀 Lilycosrent Review Corner
 
-```sh
-npm create astro@latest -- --template minimal
+Website ulasan rental kostum cosplay dengan tema **Claymorphism Kawaii** — dibangun pakai Astro, Svelte 5, Tailwind CSS v4, dan Firebase Firestore.
+
+![Design System](./DESIGN_SYSTEM.md)
+
+## ✨ Fitur
+
+- 📝 **Form Review Interaktif** — Rating bintang per kategori (Kualitas, Admin, Kecepatan) + validasi real-time
+- 💖 **Wall of Love** — Gallery review realtime dari Firestore dengan animasi smooth
+- 🎵 **Music Player** — Background music Cupid (Opus optimized)
+- 📱 **QR Card Generator** — Halaman `/qr` untuk printable card A6
+- 🔐 **Admin Dashboard** — Panel admin di `/admin`
+- 🎨 **Unified Design System** — Token warna, tipografi (Baloo 2 + Nunito), spacing konsisten lintas route
+
+## 🚀 Quick Start
+
+```bash
+# Clone repo
+git clone https://github.com/rapoii/cosplay-review.git
+cd cosplay-review
+
+# Install dependencies
+npm install
+
+# Setup environment variables
+cp .env.example .env
+# Edit .env dengan kredensial Firebase kamu
+
+# Run dev server
+npm run dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Buka `http://localhost:4321` di browser.
 
-## 🚀 Project Structure
+## 🔥 Firebase Setup
 
-Inside of your Astro project, you'll see the following folders and files:
+1. Buat project baru di [Firebase Console](https://console.firebase.google.com/)
+2. Tambahkan Web App → copy config object
+3. Aktifkan **Cloud Firestore** → pilih "Start in test mode"
+4. Paste config ke file `.env` (lihat `.env.example`)
 
-```text
+## 📁 Struktur Project
+
+```
 /
-├── public/
+├── public/             # Static assets (fonts, audio, images)
 ├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+│   ├── components/     # Svelte components (ReviewForm, Gallery, QR, Admin)
+│   ├── lib/            # Firebase config & demo data
+│   ├── pages/          # Astro routes (/, /qr, /admin)
+│   └── styles/         # Global CSS + Design Tokens
+├── scripts/            # QA & audit automation scripts
+├── .env.example        # Template environment variables
+├── DESIGN_SYSTEM.md    # Unified design tokens & rules
+└── README.md           # This file
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## 🧪 Testing
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Jalankan E2E test manual:
+1. Buka `http://localhost:4321`
+2. Isi form review → klik "Kirim ulasan"
+3. Cek Wall of Love — review harus muncul instant
+4. Verifikasi data masuk di Firebase Console → Firestore
 
-Any static assets, like images, can be placed in the `public/` directory.
+## 📄 License
 
-## 🧞 Commands
+Private project — © 2026 Lilycosrent
 
-All commands are run from the root of the project, from a terminal:
+---
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+Made with ♡ by lilycosrent_
 
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+</content>
