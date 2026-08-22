@@ -2028,8 +2028,9 @@ html.low-power .nav-menu-panel {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: #fff0f6;
-  font-size: 17px;
+  background: var(--pink-100, #ffe6f0);
+  color: var(--pink-600, #b82b61);
+  flex-shrink: 0;
 }
 
 .feature-text {

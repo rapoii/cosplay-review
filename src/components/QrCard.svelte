@@ -81,17 +81,27 @@
 
     <div class="qr-hub-features">
       <div class="feature-item">
-        <div class="feature-icon">🖨️</div>
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9V2h12v7"/>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            <rect width="12" height="8" x="6" y="14"/>
+          </svg>
+        </div>
         <div class="feature-text">
           <strong>A6 Print-Ready Standard</strong>
           <span>Ukuran pas (105×148mm) untuk postcard atau thank you card.</span>
         </div>
       </div>
       <div class="feature-item">
-        <div class="feature-icon">⚡</div>
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </div>
         <div class="feature-text">
           <strong>Instant Scan to Review</strong>
-          <span>Otomatis scroll langsung ke formulir rating & ulasan.</span>
+          <span>Otomatis scroll langsung ke formulir rating &amp; ulasan.</span>
         </div>
       </div>
     </div>
