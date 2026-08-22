@@ -1,5 +1,6 @@
 <script lang="ts">
   import { toast } from 'svelte-sonner';
+  import { getReviewUrl } from '../lib/site';
 
   type RatingKey = 'rating_quality' | 'rating_service' | 'rating_speed';
   type FormData = {
@@ -28,6 +29,10 @@
     4: 'Bagus banget',
     5: 'Puas banget!'
   };
+  const MAX_USERNAME_LENGTH = 31;
+  const MAX_COSTUME_LENGTH = 120;
+  const MAX_COMMENT_LENGTH = 500;
+  const instagramPattern = /^@?[A-Za-z0-9._]{1,30}$/;
 
   let formData = $state<FormData>(emptyForm());
   let submittedReview = $state<SubmittedReview | null>(null);
@@ -40,7 +45,22 @@
   ] as const;
 
   function setRating(key: RatingKey, value: number) {
-    formData[key] = value;
+    formData[key] = Math.max(1, Math.min(5, Math.round(value)));
+  }
+
+  function getRatingTabIndex(key: RatingKey, star: number) {
+    const selected = formData[key];
+    return selected ? (selected === star ? 0 : -1) : (star === 1 ? 0 : -1);
+  }
+
+  function handleRatingKeydown(event: KeyboardEvent, key: RatingKey, star: number) {
+    const direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0;
+    if (!direction && event.key !== 'Home' && event.key !== 'End') return;
+
+    event.preventDefault();
+    const target = event.key === 'Home' ? 1 : event.key === 'End' ? 5 : ((star - 1 + direction + 5) % 5) + 1;
+    setRating(key, target);
+    document.getElementById(`${key}-${target}`)?.focus();
   }
 
   function getRatingLabel(value: number) {
@@ -50,7 +70,7 @@
   function shareToWhatsApp() {
     if (!submittedReview || typeof window === 'undefined') return;
 
-    const reviewUrl = `${window.location.origin}/#tulis-ulasan`;
+    const reviewUrl = getReviewUrl(window.location.origin);
     const message = [
       `Aku baru aja kasih review di Lilycosrent! ⭐`,
       ``,
@@ -81,19 +101,28 @@
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    if (!formData.instagram_username.trim() || !formData.rating_quality || !formData.rating_service || !formData.rating_speed) {
-      toast.error('Isi username Instagram dan tiga rating dulu ya.');
+    const username = formData.instagram_username.trim();
+    const costume = formData.costume_type.trim();
+    const comment = formData.comment.trim();
+    const ratings = [formData.rating_quality, formData.rating_service, formData.rating_speed];
+
+    if (!instagramPattern.test(username) || username.length > MAX_USERNAME_LENGTH) {
+      toast.error('Isi username Instagram yang valid, tanpa spasi atau simbol khusus ya.');
+      return;
+    }
+    if (costume.length > MAX_COSTUME_LENGTH || comment.length > MAX_COMMENT_LENGTH || ratings.some((rating) => !Number.isInteger(rating) || rating < 1 || rating > 5)) {
+      toast.error('Periksa kembali panjang teks dan rating yang kamu isi ya.');
       return;
     }
 
     isSubmitting = true;
     const cleanReview: FormData = {
-      instagram_username: formData.instagram_username.trim(),
-      costume_type: formData.costume_type.trim(),
+      instagram_username: username,
+      costume_type: costume,
       rating_quality: formData.rating_quality,
       rating_service: formData.rating_service,
       rating_speed: formData.rating_speed,
-      comment: formData.comment.trim()
+      comment
     };
 
     try {
@@ -104,14 +133,13 @@
 
       await addDoc(collection(db, 'reviews'), {
         ...cleanReview,
-        status: 'approved',
-        created_at: serverTimestamp(),
-        ip_hash: null
+        status: 'pending',
+        created_at: serverTimestamp()
       });
 
       submittedReview = cleanReview;
       formData = emptyForm();
-      toast.success('Ulasanmu sudah masuk ke Wall of Love!');
+      toast.success('Ulasanmu sudah diterima dan menunggu moderasi.');
     } catch (error) {
       console.error('Error submitting review:', error);
       toast.error('Ulasan belum terkirim. Coba lagi sebentar ya.');
@@ -134,7 +162,7 @@
     <div class="success-badge" aria-hidden="true">♡</div>
     <p class="mini-label"><span aria-hidden="true">✦</span> REVIEW RECEIVED</p>
     <h2>Makasih, {submittedReview.instagram_username}!</h2>
-    <p class="success-copy">Cerita kamu sudah masuk ke <em>Wall of Love</em>. Makasih sudah bantu bestie cosplay lainnya rental dengan lebih tenang ♡</p>
+    <p class="success-copy">Cerita kamu sudah diterima dan akan tampil di <em>Wall of Love</em> setelah moderasi. Makasih sudah bantu bestie cosplay lainnya rental dengan lebih tenang ♡</p>
 
     <div class="success-summary" aria-label="Ringkasan rating yang baru dikirim">
       {#each categories as category}
@@ -161,7 +189,8 @@
     <div class="form-grid">
       <div class="field-group">
         <label for="instagram-username">Username Instagram <span>*</span></label>
-        <input id="instagram-username" type="text" bind:value={formData.instagram_username} placeholder="Contoh: @miku_chan" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+        <input id="instagram-username" type="text" bind:value={formData.instagram_username} placeholder="Contoh: @miku_chan" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength={MAX_USERNAME_LENGTH} pattern="@?[A-Za-z0-9._]{1,30}" aria-describedby="instagram-hint" required />
+        <small id="instagram-hint" class="field-hint-text">Maksimal 30 karakter, tanpa spasi.</small>
       </div>
       <div class="field-group">
         <label for="costume">Kostum yang disewa <small>opsional</small></label>
@@ -181,16 +210,19 @@
             <div class="rating-control" role="radiogroup" aria-label={category.label}>
               {#each [1, 2, 3, 4, 5] as star}
                 <button
+                  id={`${category.key}-${star}`}
                   type="button"
                   class:active={star <= formData[category.key]}
                   class="star-button"
                   role="radio"
+                  tabindex={getRatingTabIndex(category.key, star)}
                   aria-checked={star === formData[category.key]}
                   aria-label={`${star} bintang untuk ${category.label} — ${ratingDescriptions[star]}`}
                   onclick={() => setRating(category.key, star)}
+                  onkeydown={(event) => handleRatingKeydown(event, category.key, star)}
                 >★</button>
               {/each}
-              <span class:filled={Boolean(formData[category.key])} class="rating-value">{getRatingLabel(formData[category.key])}</span>
+              <span class:filled={Boolean(formData[category.key])} class="rating-value" aria-live="polite">{getRatingLabel(formData[category.key])}</span>
             </div>
           </div>
         {/each}
@@ -199,8 +231,8 @@
 
     <div class="field-group">
       <label for="comment">Ceritakan sedikit <small>opsional</small></label>
-      <textarea id="comment" bind:value={formData.comment} rows="4" maxlength="500" placeholder="Apa yang paling kamu suka dari pengalaman sewamu?"></textarea>
-      <div class="field-hint"><span>Jujur, santai, dan tetap ramah.</span><span>{formData.comment.length} / 500</span></div>
+      <textarea id="comment" bind:value={formData.comment} rows="4" maxlength={MAX_COMMENT_LENGTH} aria-describedby="comment-hint" placeholder="Apa yang paling kamu suka dari pengalaman sewamu?"></textarea>
+      <div id="comment-hint" class="field-hint"><span>Jujur, santai, dan tetap ramah.</span><span>{formData.comment.length} / {MAX_COMMENT_LENGTH}</span></div>
     </div>
 
     <div class="form-submit-row">

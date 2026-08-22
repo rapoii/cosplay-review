@@ -1,12 +1,11 @@
 # Placeholder Data Lilycosrent
 
-Website memiliki fixture lokal di `src/lib/demoReviews.ts` yang dipakai sebagai fallback demo pada dua tempat:
+Dokumentasi fixture demo lokal sebelumnya sudah tidak berlaku. Repository saat ini tidak memiliki `src/lib/demoReviews.ts` dan tidak memakai fallback review sintetis.
 
-| Area | Perilaku |
+| Area | Perilaku aktual |
 | --- | --- |
-| Wall of Love | Menampilkan enam kartu review demo ketika koleksi `reviews` di Firestore kosong atau snapshot gagal dimuat |
-| Dashboard admin | Menampilkan total enam review dan tiga metrik rata-rata dari fixture yang sama ketika tidak ada review approved di Firestore |
+| Wall of Love | Hanya menampilkan dokumen Firestore dengan `status == "approved"`. Jika query gagal atau belum ada data, halaman menampilkan empty state. |
+| Dashboard admin | Hanya menghitung dokumen `approved` setelah akun berhasil login dan memiliki custom claim `admin: true`. |
+| Form review | Menulis dokumen baru dengan `status: "pending"`; review harus dimoderasi sebelum tampil ke publik. |
 
-Fixture ini bersifat **read-only** dan tidak memanggil `addDoc`, `setDoc`, `updateDoc`, atau operasi tulis Firestore. Konfigurasi Firebase juga tidak diubah.
-
-Ketika satu atau lebih review Firestore yang sesuai tersedia, data demo otomatis digantikan oleh data Firestore. Badge `Data demo sementara` memberi tanda bahwa data yang sedang tampil bukan ulasan customer asli.
+Sumber kebenaran keamanan dan validasi adalah `firestore.rules` serta query pada `ReviewGallery.svelte` dan `AdminDashboard.svelte`.

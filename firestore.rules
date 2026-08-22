@@ -1,0 +1,48 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function isValidReview() {
+      return request.resource.data.keys().hasOnly([
+        'instagram_username',
+        'costume_type',
+        'rating_quality',
+        'rating_service',
+        'rating_speed',
+        'comment',
+        'status',
+        'created_at',
+        'ip_hash'
+      ])
+      && request.resource.data.instagram_username is string
+      && request.resource.data.instagram_username.matches('^@?[A-Za-z0-9._]{1,30}$')
+      && request.resource.data.instagram_username.size() <= 31
+      && request.resource.data.costume_type is string
+      && request.resource.data.costume_type.size() <= 120
+      && request.resource.data.comment is string
+      && request.resource.data.comment.size() <= 500
+      && request.resource.data.rating_quality is int
+      && request.resource.data.rating_quality >= 1
+      && request.resource.data.rating_quality <= 5
+      && request.resource.data.rating_service is int
+      && request.resource.data.rating_service >= 1
+      && request.resource.data.rating_service <= 5
+      && request.resource.data.rating_speed is int
+      && request.resource.data.rating_speed >= 1
+      && request.resource.data.rating_speed <= 5
+      && request.resource.data.status == 'pending'
+      && request.resource.data.created_at == request.time
+      && request.resource.data.ip_hash == null;
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if isAdmin() || (resource.data.status == 'approved');
+      allow create: if isValidReview();
+      allow update, delete: if isAdmin();
+    }
+  }
+}

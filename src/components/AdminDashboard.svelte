@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { getIdTokenResult, onAuthStateChanged, signInWithEmailAndPassword, signOut, type Auth } from 'firebase/auth';
+  import { getFirebaseAuth } from '../lib/firebase-auth';
   import QrCard from './QrCard.svelte';
 
   type Review = {
@@ -8,85 +10,28 @@
     rating_speed?: number;
   };
 
-  const ADMIN_KEY = import.meta.env.PUBLIC_ADMIN_KEY || '';
   const metrics = [
     { key: 'rating_quality', label: 'Kualitas kostum', icon: '✦', tone: 'pink' },
     { key: 'rating_service', label: 'Keramahan admin', icon: '♡', tone: 'lavender' },
     { key: 'rating_speed', label: 'Kecepatan chat', icon: 'ϟ', tone: 'peach' }
   ] as const;
 
-  let passcode = $state('');
-  let isUnlocked = $state(false);
+  let loginEmail = $state('');
+  let loginPassword = $state('');
+  let authEmail = $state('');
+  let isAuthenticated = $state(false);
+  let isAuthReady = $state(false);
+  let isAuthLoading = $state(false);
   let isLoading = $state(false);
+  let authError = $state('');
   let errorMessage = $state('');
   let reviews = $state<Review[]>([]);
   let lastUpdated = $state('');
   let activeTab = $state<'stats' | 'card'>('stats');
-
-  // Cooldown state
-  let failCount = $state(0);
-  let cooldownUntil = $state(0);
-  let remainingSeconds = $state(0);
-  let cooldownTimer: ReturnType<typeof setInterval> | undefined;
-
-  function getCooldownDuration(fails: number): number {
-    if (fails <= 3) return 0;
-    return 3 + (fails - 3) * 6;
-  }
-
-  function startCooldown() {
-    const duration = getCooldownDuration(failCount);
-    if (duration <= 0) return;
-
-    cooldownUntil = Date.now() + duration * 1000;
-    remainingSeconds = duration;
-
-    if (cooldownTimer) clearInterval(cooldownTimer);
-    cooldownTimer = setInterval(() => {
-      const left = Math.ceil((cooldownUntil - Date.now()) / 1000);
-      if (left <= 0) {
-        remainingSeconds = 0;
-        if (cooldownTimer) clearInterval(cooldownTimer);
-        cooldownTimer = undefined;
-      } else {
-        remainingSeconds = left;
-      }
-    }, 250);
-  }
+  let adminAuth = $state<Auth | null>(null);
 
   function safeRating(value?: number) {
     return Math.max(0, Math.min(5, Number(value) || 0));
-  }
-
-  function unlock() {
-    if (remainingSeconds > 0) {
-      errorMessage = `Tunggu ${remainingSeconds} detik sebelum mencoba lagi.`;
-      return;
-    }
-
-    if (passcode.trim() !== ADMIN_KEY) {
-      failCount++;
-      const duration = getCooldownDuration(failCount);
-      if (duration > 0) {
-        startCooldown();
-        errorMessage = `Kode salah. Tunggu ${duration} detik sebelum mencoba lagi.`;
-      } else {
-        errorMessage = 'Kode belum cocok. Coba lagi ya.';
-      }
-      passcode = '';
-      return;
-    }
-
-    failCount = 0;
-    cooldownUntil = 0;
-    remainingSeconds = 0;
-    if (cooldownTimer) {
-      clearInterval(cooldownTimer);
-      cooldownTimer = undefined;
-    }
-    errorMessage = '';
-    isUnlocked = true;
-    loadStats();
   }
 
   async function loadStats() {
@@ -94,23 +39,70 @@
     errorMessage = '';
 
     try {
-      const [{ db }, { collection, getDocs }] = await Promise.all([
+      const [{ db }, { collection, getDocs, query, where }] = await Promise.all([
         import('../lib/firebase'),
         import('firebase/firestore')
       ]);
-      const snapshot = await getDocs(collection(db, 'reviews'));
-      const firestoreReviews = snapshot.docs
-        .map((doc) => doc.data() as Review & { status?: string })
-        .filter((review) => !review.status || review.status === 'approved');
-      reviews = firestoreReviews;
+      const snapshot = await getDocs(query(collection(db, 'reviews'), where('status', '==', 'approved')));
+      reviews = snapshot.docs.map((doc) => doc.data() as Review);
       lastUpdated = new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date());
     } catch (error) {
       console.error('Error loading admin stats:', error);
       reviews = [];
       lastUpdated = '';
-      errorMessage = '';
+      errorMessage = 'Statistik belum dapat dimuat. Periksa koneksi dan Firestore Security Rules.';
     } finally {
       isLoading = false;
+    }
+  }
+
+  async function handleLogin() {
+    if (!loginEmail.trim() || !loginPassword) {
+      authError = 'Isi email dan password admin terlebih dahulu.';
+      return;
+    }
+
+    isAuthLoading = true;
+    authError = '';
+
+    try {
+      if (!adminAuth) throw new Error('auth-not-ready');
+      const credential = await signInWithEmailAndPassword(adminAuth, loginEmail.trim(), loginPassword);
+      const token = await getIdTokenResult(credential.user, true);
+
+      if (token.claims.admin !== true) {
+        await signOut(adminAuth);
+        throw new Error('not-admin');
+      }
+
+      authEmail = credential.user.email ?? loginEmail.trim();
+      isAuthenticated = true;
+      loginPassword = '';
+      await loadStats();
+    } catch (error) {
+      console.error('Admin login failed:', error);
+      if (error instanceof Error && error.message === 'not-admin') {
+        authError = 'Akun berhasil dikenali, tetapi belum memiliki akses admin.';
+      } else {
+        authError = 'Email atau password admin tidak cocok.';
+      }
+    } finally {
+      isAuthLoading = false;
+    }
+  }
+
+  async function logout() {
+    try {
+      if (!adminAuth) return;
+      await signOut(adminAuth);
+      isAuthenticated = false;
+      authEmail = '';
+      reviews = [];
+      lastUpdated = '';
+      activeTab = 'stats';
+    } catch (error) {
+      console.error('Admin logout failed:', error);
+      authError = 'Logout gagal. Coba muat ulang halaman.';
     }
   }
 
@@ -125,53 +117,103 @@
   }
 
   onMount(() => {
-    const key = new URLSearchParams(window.location.search).get('key');
-    if (key) {
-      passcode = key;
-      unlock();
-    }
+    let disposed = false;
+    let unsubscribe: (() => void) | undefined;
+
+    const startAuthListener = async () => {
+      try {
+        const currentAuth = getFirebaseAuth();
+        adminAuth = currentAuth;
+        unsubscribe = onAuthStateChanged(currentAuth, async (user) => {
+          if (disposed) return;
+          isAuthReady = true;
+          authError = '';
+
+          if (!user) {
+            isAuthenticated = false;
+            authEmail = '';
+            return;
+          }
+
+          try {
+            const token = await getIdTokenResult(user, true);
+            if (token.claims.admin !== true) {
+              await signOut(adminAuth);
+              authError = 'Akun ini belum memiliki akses admin.';
+              return;
+            }
+            authEmail = user.email ?? '';
+            isAuthenticated = true;
+            await loadStats();
+          } catch (error) {
+            console.error('Admin session validation failed:', error);
+            await signOut(adminAuth);
+            authError = 'Sesi admin tidak dapat divalidasi.';
+          }
+        });
+      } catch (error) {
+        if (!(error instanceof Error && error.message === 'firebase-config-missing')) {
+          console.error('Firebase Auth initialization failed:', error);
+        }
+        isAuthReady = true;
+        authError = 'Autentikasi admin belum siap. Periksa konfigurasi Firebase.';
+      }
+    };
+
+    void startAuthListener();
+
     return () => {
-      if (cooldownTimer) clearInterval(cooldownTimer);
+      disposed = true;
+      unsubscribe?.();
     };
   });
 </script>
 
-{#if !isUnlocked}
+{#if !isAuthReady}
+  <section class="admin-gate" aria-live="polite">
+    <div class="admin-gate-icon" aria-hidden="true">✦</div>
+    <p class="mini-label"><span aria-hidden="true">♡</span> OWNER CORNER</p>
+    <h1 id="admin-gate-title">Memuat akses admin</h1>
+    <p>Memeriksa sesi aman kamu sebentar yaa.</p>
+  </section>
+{:else if !isAuthenticated}
   <section class="admin-gate" aria-labelledby="admin-gate-title">
     <div class="admin-gate-icon" aria-hidden="true">✦</div>
     <p class="mini-label"><span aria-hidden="true">♡</span> OWNER CORNER</p>
-    <h2 id="admin-gate-title">Lily's review stats</h2>
-    <p>Masukkan kode sederhana untuk melihat ringkasan ulasan &amp; kit kartu QR.</p>
-    <form class="admin-key-form" onsubmit={(event) => { event.preventDefault(); unlock(); }}>
-      <label for="admin-key">Kode admin</label>
-      <input id="admin-key" type="password" bind:value={passcode} placeholder="Masukkan kode" autocomplete="current-password" disabled={remainingSeconds > 0} />
-      <button class="submit-button" type="submit" disabled={remainingSeconds > 0}>
-        {#if remainingSeconds > 0}
-          Tunggu {remainingSeconds}s...
-        {:else}
-          Buka dashboard <span aria-hidden="true">↗</span>
-        {/if}
+    <h1 id="admin-gate-title">Lily's review stats</h1>
+    <p>Masuk dengan akun admin Firebase untuk melihat statistik ulasan dan kit kartu QR.</p>
+    <form class="admin-key-form" onsubmit={(event) => { event.preventDefault(); void handleLogin(); }}>
+      <label for="admin-email">Email admin</label>
+      <input id="admin-email" type="email" bind:value={loginEmail} placeholder="admin@contoh.com" autocomplete="username" required disabled={isAuthLoading} />
+      <label for="admin-password">Password</label>
+      <input id="admin-password" type="password" bind:value={loginPassword} placeholder="Masukkan password" autocomplete="current-password" required disabled={isAuthLoading} />
+      <button class="submit-button" type="submit" disabled={isAuthLoading}>
+        {isAuthLoading ? 'Memeriksa...' : 'Buka dashboard'} <span aria-hidden="true">↗</span>
       </button>
     </form>
-    {#if errorMessage}<p class="admin-error" role="alert">{errorMessage}</p>{/if}
-    <p class="admin-disclaimer">Akses khusus pengelola Lilycosrent untuk melihat statistik dan mengunduh kartu ucapan paket rental.</p>
+    {#if authError}<p class="admin-error" role="alert" aria-live="assertive">{authError}</p>{/if}
+    <p class="admin-disclaimer">Akses hanya diberikan kepada akun Firebase yang memiliki custom claim <code>admin: true</code>. Password tidak disimpan di aplikasi.</p>
   </section>
 {:else}
   <div class="admin-layout-wrapper">
-    <!-- Sub-navigation Tabs -->
-    <div class="admin-subtabs">
-      <button 
-        type="button" 
-        class="admin-tab-btn" 
-        class:active={activeTab === 'stats'} 
+    <h1 class="sr-only">Dashboard admin Lilycosrent</h1>
+    <div class="admin-subtabs" role="tablist" aria-label="Bagian dashboard admin">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={activeTab === 'stats'}
+        class="admin-tab-btn"
+        class:active={activeTab === 'stats'}
         onclick={() => activeTab = 'stats'}
       >
-        <span aria-hidden="true">📊</span> Statistik Review
+        <span aria-hidden="true">▦</span> Statistik Review
       </button>
-      <button 
-        type="button" 
-        class="admin-tab-btn" 
-        class:active={activeTab === 'card'} 
+      <button
+        type="button"
+        role="tab"
+        aria-selected={activeTab === 'card'}
+        class="admin-tab-btn"
+        class:active={activeTab === 'card'}
         onclick={() => activeTab = 'card'}
       >
         <span aria-hidden="true">▣</span> Kartu QR &amp; Print Kit
@@ -184,20 +226,23 @@
           <div>
             <p class="mini-label"><span aria-hidden="true">✦</span> PRIVATE REVIEW STATS</p>
             <h2 id="admin-title">Haii, Lilycosrent!</h2>
-            <p>Ringkasan suara customer yang sudah masuk ke Wall of Love.</p>
+            <p>Masuk sebagai {authEmail || 'admin'}.</p>
           </div>
-          <button class="admin-refresh-button" type="button" onclick={loadStats} disabled={isLoading}>
-            {isLoading ? 'Memuat...' : 'Refresh ↻'}
-          </button>
+          <div class="admin-dashboard-actions">
+            <button class="admin-refresh-button" type="button" onclick={() => void loadStats()} disabled={isLoading}>
+              {isLoading ? 'Memuat...' : 'Refresh ↻'}
+            </button>
+            <button class="admin-logout-button" type="button" onclick={() => void logout()}>Keluar</button>
+          </div>
         </div>
 
         {#if errorMessage}<p class="admin-error" role="alert">{errorMessage}</p>{/if}
 
         <div class="admin-total-card">
           <div>
-            <span class="admin-card-label">Total ulasan masuk</span>
+            <span class="admin-card-label">Total ulasan approved</span>
             <strong>{reviews.length}</strong>
-            <small>{reviews.length === 1 ? 'cerita customer' : 'cerita customer'}</small>
+            <small>cerita customer</small>
           </div>
           <span class="admin-total-heart" aria-hidden="true">♡</span>
         </div>
@@ -210,7 +255,7 @@
                 <span class="admin-card-label">{metric.label}</span>
               </div>
               <strong>{average(metric.key)}<small>/5</small></strong>
-              <div class="admin-progress" aria-label={`Rata-rata ${average(metric.key)} dari 5`}>
+              <div class="admin-progress" role="progressbar" aria-label={`Rata-rata ${metric.label}`} aria-valuemin="0" aria-valuemax="5" aria-valuenow={Number(average(metric.key))}>
                 <span style={`--progress-scale: ${progressRatio(average(metric.key))}`}></span>
               </div>
               <p>{Number(average(metric.key)) >= 4.5 ? 'Bestie paling suka banget!' : Number(average(metric.key)) >= 3.5 ? 'Sudah bagus, pertahankan yaa.' : 'Bisa jadi bahan evaluasi bersama.'}</p>
@@ -222,7 +267,7 @@
           <span>{lastUpdated ? `Terakhir diperbarui ${lastUpdated}` : 'Belum ada data terbaru'}</span>
         </div>
       </section>
-    {:else if activeTab === 'card'}
+    {:else}
       <div class="admin-card-tab-view">
         <QrCard />
       </div>

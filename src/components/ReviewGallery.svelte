@@ -32,13 +32,13 @@
 
     const startRealtimeReviews = async () => {
       try {
-        const [{ db }, { collection, query, orderBy, onSnapshot }] = await Promise.all([
+        const [{ db }, { collection, query, where, orderBy, onSnapshot }] = await Promise.all([
           import('../lib/firebase'),
           import('firebase/firestore')
         ]);
         if (disposed) return;
 
-        const reviewsQuery = query(collection(db, 'reviews'), orderBy('created_at', 'desc'));
+        const reviewsQuery = query(collection(db, 'reviews'), where('status', '==', 'approved'), orderBy('created_at', 'desc'));
         unsubscribe = onSnapshot(
           reviewsQuery,
           (snapshot) => {
@@ -87,7 +87,8 @@
 
   function getStars(value?: number) {
     const rating = safeRating(value);
-    return Array.from({ length: 5 }, (_, index) => (index < rating ? '★' : '☆')).join('');
+    const roundedRating = Math.round(rating);
+    return Array.from({ length: 5 }, (_, index) => (index < roundedRating ? '★' : '☆')).join('');
   }
 
   function getReviewerHandle(review: Review) {

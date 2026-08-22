@@ -6,6 +6,10 @@ import MusicPlayer from '../components/MusicPlayer.svelte';
 import MotionEffects from '../components/MotionEffects.svelte';
 import { Toaster } from 'svelte-sonner';
 import '../styles/global.css';
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL?.replace(/\/$/, '');
+const pageTitle = 'lilycosrent_ — review corner ♡';
+const pageDescription = 'Review pengalaman rental kostum kamu di Lilycosrent dan bantu bestie cosplay lainnya.';
 ---
 
 <!doctype html>
@@ -13,9 +17,19 @@ import '../styles/global.css';
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Review pengalaman rental kostum kamu di Lilycosrent dan bantu bestie cosplay lainnya." />
+    <meta name="description" content={pageDescription} />
     <meta name="theme-color" content="#fff0f6" />
-    <title>lilycosrent_ — review corner ♡</title>
+    {siteUrl && <link rel="canonical" href={`${siteUrl}/`} />}
+    {siteUrl && <meta property="og:url" content={`${siteUrl}/`} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    {siteUrl && <meta property="og:image" content={`${siteUrl}/chibi-review-card.webp`} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    {siteUrl && <meta name="twitter:image" content={`${siteUrl}/chibi-review-card.webp`} />}
+    <title>{pageTitle}</title>
     <ClientRouter />
     <link rel="preload" href="/fonts/wXKrE3kTposypRyd51jcAA.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/XRXV3I6Li01BKofINeaB.woff2" as="font" type="font/woff2" crossorigin />

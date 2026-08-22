@@ -52,13 +52,12 @@ async function seed() {
       rating_service: Math.floor(Math.random() * 2) + 4,
       rating_speed: Math.floor(Math.random() * 2) + 4,
       comment: comments[i % comments.length],
-      status: 'approved',
-      created_at: serverTimestamp(),
-      ip_hash: null
+      status: 'pending',
+      created_at: serverTimestamp()
     });
     console.log(`  ✓ ${usernames[i]} - ${costumes[i]}`);
   }
-  console.log('Done! All 20 reviews seeded.');
+  console.log('Done! All 20 reviews seeded as pending. Moderate them before publishing.');
   process.exit(0);
 }
 

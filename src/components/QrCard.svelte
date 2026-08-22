@@ -1,16 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import QRCode from 'qrcode';
+  import { getReviewUrl } from '../lib/site';
 
   let canvas: HTMLCanvasElement;
   let reviewUrl = $state('');
   let qrReady = $state(false);
   let qrError = $state(false);
   let copyFeedback = $state(false);
-  let activeTab = $state<'card' | 'actions'>('card'); // for mobile toggle if needed, or tab view
 
   onMount(async () => {
-    reviewUrl = `${window.location.origin}/#tulis-ulasan`;
+    reviewUrl = getReviewUrl(window.location.origin);
     try {
       await QRCode.toCanvas(canvas, reviewUrl, {
         width: 360,
