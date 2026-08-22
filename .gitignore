@@ -33,7 +33,15 @@ GoogleService-Info.plist
 .DS_Store
 Thumbs.db
 desktop.ini
-</parameter>
+
+# SQLite / databases / local cache
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite3
+.codegraph/
+
 # local QA artifacts
 qa-*.json
 qa-*.png

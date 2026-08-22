@@ -39,14 +39,12 @@ Judul utama pada QR card dan dashboard harus memakai token page title yang sama,
 | `--pink-300` | `#fdb3cc` | Soft accent |
 | `--pink-400` | `#f785ae` | Active decoration |
 | `--pink-500` | `#ec5f93` | Primary brand/action accent |
-| `--pink-600` | `#cd3f73` | Strong text/accent/CTA |
-| `--lavender-100` | `#eee8ff` | Secondary pastel surface |
-| `--lavender-300` | `#c9b9f0` | Secondary accent |
-| `--plum` | `#54354a` | Primary text and heading |
-| `--plum-soft` | `#836b7c` | Body copy |
-| `--muted` | `#ac99a6` | Supporting/helper text |
-| `--line` | `#f4dce7` | Fine separators |
-| `--yellow` | `#ffbe54` | Small sparkle/kicker accent only |
+| `--pink-600` | `#d63d75` | Strong text/accent/CTA |
+| `--lavender-300` | `#f1dbf8` | Secondary pastel accent |
+| `--plum` | `#4f3346` | Primary text and heading |
+| `--plum-soft` | `#7a5c70` | Body copy |
+| `--muted` | `#8b6e82` | Supporting/helper text |
+| `--yellow` | `#f8c946` | Small sparkle/rating star accent |
 
 ## Surfaces and containers
 
@@ -77,10 +75,9 @@ The global content width is `min(100% - 40px, 1120px)` on desktop and `min(100% 
 | Route | Canonical shell | Route-specific content |
 | --- | --- | --- |
 | `/` | Form shell + chibi panel + Wall of Love | Customer form, ratings, success state, realtime reviews |
-| `/qr` | Same main shell treatment | QR utility copy, same controls, printable card as an inner artifact |
-| `/admin` | Same main shell treatment | Admin access gate or metric dashboard using the same title/body/control tokens |
+| `/admin` | Same main shell treatment | Admin login gate, live metrics dashboard, and secured QR Print Kit tab |
 
-The printable QR card may retain its pink internal artwork and A6-specific composition, but its brand, title, body, controls, colors, radius, border, shadow, and type tokens must resolve to this same system.
+The printable QR card retains its pink internal artwork and A6-specific composition inside the admin tab, but its brand, title, body, controls, colors, radius, border, shadow, and type tokens resolve to this same system.
 
 ## Responsive and print rules
 

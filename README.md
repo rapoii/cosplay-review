@@ -9,9 +9,9 @@ Website ulasan rental kostum cosplay dengan tema **Claymorphism Kawaii** — dib
 - 📝 **Form Review Interaktif** — Rating bintang per kategori (Kualitas, Admin, Kecepatan) + validasi real-time
 - 💖 **Wall of Love** — Gallery review realtime dari Firestore dengan animasi smooth
 - 🎵 **Music Player** — Background music Cupid (Opus optimized)
-- 📱 **QR Card Generator** — Halaman `/qr` untuk printable card A6
-- 🔐 **Admin Dashboard** — Panel admin di `/admin` dengan Firebase Authentication dan custom claim `admin: true`
-- 🎨 **Unified Design System** — Token warna, tipografi (Baloo 2 + Nunito), spacing konsisten lintas route
+- 📱 **QR Card & Print Kit Hub** — Generator printable card A6 terintegrasi aman di dalam Tab Admin Dashboard (`/admin`)
+- 🔐 **Admin Dashboard** — Panel admin di `/admin` dengan Firebase Authentication, live review statistics, dan QR print hub
+- 🎨 **Unified Design System** — Token warna pastel pink, tipografi (Baloo 2 + Nunito), 60 FPS motion & responsive layout lintas route
 
 ## 🚀 Quick Start
 
@@ -48,10 +48,10 @@ Buka `http://localhost:4321` di browser.
 /
 ├── public/             # Static assets (fonts, audio, images)
 ├── src/
-│   ├── components/     # Svelte components (ReviewForm, Gallery, QR, Admin)
-│   ├── lib/            # Firebase config & helper URL
-│   ├── pages/          # Astro routes (/, /qr, /admin)
-│   └── styles/         # Global CSS + Design Tokens
+│   ├── components/     # Svelte components (ReviewForm, Gallery, QrCard, AdminDashboard, MotionEffects, MusicPlayer)
+│   ├── lib/            # Firebase client config & authentication helpers
+│   ├── pages/          # Astro routes (/, /admin)
+│   └── styles/         # Global CSS + Design Tokens (Pastel Pink Theme)
 ├── scripts/            # QA & audit automation scripts
 ├── firestore.rules     # Firestore Security Rules production
 ├── firestore.indexes.json # Composite index untuk query review

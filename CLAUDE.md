@@ -1,12 +1,22 @@
-## Development
+## Development Commands
 
-When starting the dev server, use background mode:
+```bash
+# Start Astro dev server
+npm run dev
 
+# Run full type-check
+npm run typecheck
+
+# Build for production
+npm run build
 ```
-astro dev --background
-```
 
-Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
+## Architecture & Conventions
+
+- **Astro + Svelte 5**: Modern reactivity with `$state` runes.
+- **Admin Hub & Security**: Admin panel at `/admin` with Firebase Auth. QR Print Kit is securely hosted in the Admin tab view.
+- **Unified Design Tokens**: Pure Kawaii pastel pink theme (`--pink-500: #ec5f93`, `--pink-600: #d63d75`, `--font-display: 'Baloo 2'`).
+- **DoD (Definition of Done)**: Always verify with `npm run build` (0 error) and visual audit before committing.
 
 ## Documentation
 
