@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import QrCard from './QrCard.svelte';
 
   type Review = {
     rating_quality?: number;
@@ -20,6 +21,7 @@
   let errorMessage = $state('');
   let reviews = $state<Review[]>([]);
   let lastUpdated = $state('');
+  let activeTab = $state<'stats' | 'card'>('stats');
 
   // Cooldown state
   let failCount = $state(0);
@@ -139,7 +141,7 @@
     <div class="admin-gate-icon" aria-hidden="true">✦</div>
     <p class="mini-label"><span aria-hidden="true">♡</span> OWNER CORNER</p>
     <h2 id="admin-gate-title">Lily's review stats</h2>
-    <p>Masukkan kode sederhana untuk melihat ringkasan ulasan customer.</p>
+    <p>Masukkan kode sederhana untuk melihat ringkasan ulasan &amp; kit kartu QR.</p>
     <form class="admin-key-form" onsubmit={(event) => { event.preventDefault(); unlock(); }}>
       <label for="admin-key">Kode admin</label>
       <input id="admin-key" type="password" bind:value={passcode} placeholder="Masukkan kode" autocomplete="current-password" disabled={remainingSeconds > 0} />
@@ -152,50 +154,78 @@
       </button>
     </form>
     {#if errorMessage}<p class="admin-error" role="alert">{errorMessage}</p>{/if}
-    <p class="admin-disclaimer">Gate ini dibuat sebagai akses praktis untuk dashboard sederhana, bukan sistem keamanan untuk data sensitif.</p>
+    <p class="admin-disclaimer">Akses khusus pengelola Lilycosrent untuk melihat statistik dan mengunduh kartu ucapan paket rental.</p>
   </section>
 {:else}
-  <section class="admin-dashboard" aria-labelledby="admin-title">
-    <div class="admin-dashboard-head">
-      <div>
-        <p class="mini-label"><span aria-hidden="true">✦</span> PRIVATE REVIEW STATS</p>
-        <h2 id="admin-title">Haii, Lilycosrent!</h2>
-        <p>Ringkasan suara customer yang sudah masuk ke Wall of Love.</p>
-      </div>
-      <button class="admin-refresh-button" type="button" onclick={loadStats} disabled={isLoading}>
-        {isLoading ? 'Memuat...' : 'Refresh ↻'}
+  <div class="admin-layout-wrapper">
+    <!-- Sub-navigation Tabs -->
+    <div class="admin-subtabs">
+      <button 
+        type="button" 
+        class="admin-tab-btn" 
+        class:active={activeTab === 'stats'} 
+        onclick={() => activeTab = 'stats'}
+      >
+        <span aria-hidden="true">📊</span> Statistik Review
+      </button>
+      <button 
+        type="button" 
+        class="admin-tab-btn" 
+        class:active={activeTab === 'card'} 
+        onclick={() => activeTab = 'card'}
+      >
+        <span aria-hidden="true">▣</span> Kartu QR &amp; Print Kit
       </button>
     </div>
 
-    {#if errorMessage}<p class="admin-error" role="alert">{errorMessage}</p>{/if}
+    {#if activeTab === 'stats'}
+      <section class="admin-dashboard" aria-labelledby="admin-title">
+        <div class="admin-dashboard-head">
+          <div>
+            <p class="mini-label"><span aria-hidden="true">✦</span> PRIVATE REVIEW STATS</p>
+            <h2 id="admin-title">Haii, Lilycosrent!</h2>
+            <p>Ringkasan suara customer yang sudah masuk ke Wall of Love.</p>
+          </div>
+          <button class="admin-refresh-button" type="button" onclick={loadStats} disabled={isLoading}>
+            {isLoading ? 'Memuat...' : 'Refresh ↻'}
+          </button>
+        </div>
 
-    <div class="admin-total-card">
-      <div>
-        <span class="admin-card-label">Total ulasan masuk</span>
-        <strong>{reviews.length}</strong>
-        <small>{reviews.length === 1 ? 'cerita customer' : 'cerita customer'}</small>
+        {#if errorMessage}<p class="admin-error" role="alert">{errorMessage}</p>{/if}
+
+        <div class="admin-total-card">
+          <div>
+            <span class="admin-card-label">Total ulasan masuk</span>
+            <strong>{reviews.length}</strong>
+            <small>{reviews.length === 1 ? 'cerita customer' : 'cerita customer'}</small>
+          </div>
+          <span class="admin-total-heart" aria-hidden="true">♡</span>
+        </div>
+
+        <div class="admin-metric-grid">
+          {#each metrics as metric}
+            <article class={`admin-metric-card ${metric.tone}`}>
+              <div class="admin-metric-top">
+                <span class="rating-icon" class:lightning-icon={metric.key === 'rating_speed'} aria-hidden="true">{metric.icon}</span>
+                <span class="admin-card-label">{metric.label}</span>
+              </div>
+              <strong>{average(metric.key)}<small>/5</small></strong>
+              <div class="admin-progress" aria-label={`Rata-rata ${average(metric.key)} dari 5`}>
+                <span style={`--progress-scale: ${progressRatio(average(metric.key))}`}></span>
+              </div>
+              <p>{Number(average(metric.key)) >= 4.5 ? 'Bestie paling suka banget!' : Number(average(metric.key)) >= 3.5 ? 'Sudah bagus, pertahankan yaa.' : 'Bisa jadi bahan evaluasi bersama.'}</p>
+            </article>
+          {/each}
+        </div>
+
+        <div class="admin-dashboard-footer">
+          <span>{lastUpdated ? `Terakhir diperbarui ${lastUpdated}` : 'Belum ada data terbaru'}</span>
+        </div>
+      </section>
+    {:else if activeTab === 'card'}
+      <div class="admin-card-tab-view">
+        <QrCard />
       </div>
-      <span class="admin-total-heart" aria-hidden="true">♡</span>
-    </div>
-
-    <div class="admin-metric-grid">
-      {#each metrics as metric}
-        <article class={`admin-metric-card ${metric.tone}`}>
-          <div class="admin-metric-top">
-            <span class="rating-icon" class:lightning-icon={metric.key === 'rating_speed'} aria-hidden="true">{metric.icon}</span>
-            <span class="admin-card-label">{metric.label}</span>
-          </div>
-          <strong>{average(metric.key)}<small>/5</small></strong>
-          <div class="admin-progress" aria-label={`Rata-rata ${average(metric.key)} dari 5`}>
-            <span style={`--progress-scale: ${progressRatio(average(metric.key))}`}></span>
-          </div>
-          <p>{Number(average(metric.key)) >= 4.5 ? 'Bestie paling suka banget!' : Number(average(metric.key)) >= 3.5 ? 'Sudah bagus, pertahankan yaa.' : 'Bisa jadi bahan evaluasi bersama.'}</p>
-        </article>
-      {/each}
-    </div>
-
-    <div class="admin-dashboard-footer">
-      <span>{lastUpdated ? `Terakhir diperbarui ${lastUpdated}` : 'Belum ada data terbaru'}</span>
-    </div>
-  </section>
+    {/if}
+  </div>
 {/if}
